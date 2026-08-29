@@ -15,6 +15,8 @@ AP.MakeScreenActor = function(screenName)
 		af[#af+1] = Def.Actor {
 			ModuleCommand = function(self)
 				AP.ClampedWarnings = {} -- Reset warnings on music wheel
+				pcall(AP.ConsumeCurrentTrap)
+				pcall(AP.ResetAllTrapPlayerOptions)
 				local apHandler = AP.GetAPHandlerInstance()
 				if apHandler and apHandler.connected and AP.seedName and AP.seedName ~= "Unknown" and SONGMAN:GetPreferredSortSongs() then
 					local top = SCREENMAN:GetTopScreen()
@@ -26,9 +28,6 @@ AP.MakeScreenActor = function(screenName)
 					end
 				end
 				self:playcommand("InstallSortMenuHook")
-			end,
-			OffCommand = function(self)
-				pcall(AP.ApplyArmedTrapsNow)
 			end,
 			InstallSortMenuHookCommand = function(self)
 				local top = SCREENMAN:GetTopScreen()
@@ -139,11 +138,8 @@ AP.MakeScreenActor = function(screenName)
 		af[#af+1] = Def.Actor {
 			ModuleCommand = function(self)
 				-- Consume trap and reset states
-				AP.cachedHalfSpeedTarget = {}
-				AP.debugAnnouncedThisSong = {}
-				if #AP.armedTrapQueue > 0 then
-					table.remove(AP.armedTrapQueue, 1)
-				end
+				pcall(AP.ConsumeCurrentTrap)
+				pcall(AP.ResetAllTrapPlayerOptions)
 				AP.deathlinkArmed = false
 				AP.ignoreNextDeathReport = false
 
@@ -261,6 +257,10 @@ AP.MakeScreenActor = function(screenName)
 				end
 				pcall(AP.ApplyArmedTrapsNow)
 				self:playcommand("APGameplayDeathLinkPoll")
+			end,
+			OffCommand = function(self)
+				pcall(AP.ConsumeCurrentTrap)
+				pcall(AP.ResetAllTrapPlayerOptions)
 			end,
 			APGameplayDeathLinkPollCommand = function(self)
 				if AP.deathlinkArmed then
