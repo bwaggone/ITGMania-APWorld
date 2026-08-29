@@ -19,6 +19,7 @@ AP.itemNames = {}
 AP.locationIds = {}
 AP.folderToChartName = {}
 AP.seedName = "Unknown"
+AP.hasDefaultedToSortOrderPreferred = false
 AP.AP_AllReceivedItems = {}
 AP.bonusUsage = {}
 AP.initialSyncComplete = false
