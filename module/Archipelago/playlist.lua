@@ -9,28 +9,30 @@ AP.UpdatePlaylist = function()
 	local path = THEME:GetCurrentThemeDirectory() .. "Other/Playlists/Archipelago - " .. AP.seedName .. ".txt"
 	local playlist_content = "--- Archipelago\n"
 	local count = 0
-	
+
+	local seen = {}
 	for _, item in ipairs(AP.AP_AllReceivedItems) do
 		local item_id = item.item
 		local item_name = AP.itemNames[item_id]
 		if item_name and item_name:find("/") then
-			-- Parse the path to get only the song directory name (the middle part in Group/Folder/File)
+			-- Parse the path to get PackName/SongName (the group and song folder name)
 			local parts = {}
 			for part in item_name:gmatch("[^/]+") do
 				table.insert(parts, part)
 			end
-			local songFolder = nil
+			local songEntry = nil
 			if #parts >= 2 then
-				songFolder = parts[2]
+				songEntry = parts[#parts-1] .. "/" .. parts[#parts]
 			elseif #parts == 1 then
-				songFolder = parts[1]
+				songEntry = parts[1]
 			end
 			
-			if songFolder then
-				playlist_content = playlist_content .. songFolder .. "\n"
+			if songEntry and not seen[songEntry] then
+				seen[songEntry] = true
+				playlist_content = playlist_content .. songEntry .. "\n"
 				count = count + 1
-				if not SONGMAN:FindSong(songFolder) then
-					AP.Trace("Archipelago warning: Received song is not installed: " .. songFolder)
+				if not SONGMAN:FindSong(songEntry) then
+					AP.Trace("Archipelago warning: Received song is not installed: " .. songEntry)
 				end
 			end
 		end
@@ -45,18 +47,19 @@ AP.UpdatePlaylist = function()
 			for part in AP.slotOptions.goal_song:gmatch("[^/]+") do
 				table.insert(parts, part)
 			end
-			local goalFolder = nil
+			local goalEntry = nil
 			if #parts >= 2 then
-				goalFolder = parts[2]
+				goalEntry = parts[#parts-1] .. "/" .. parts[#parts]
 			elseif #parts == 1 then
-				goalFolder = parts[1]
+				goalEntry = parts[1]
 			end
 			
-			if goalFolder then
-				playlist_content = playlist_content .. goalFolder .. "\n"
+			if goalEntry and not seen[goalEntry] then
+				seen[goalEntry] = true
+				playlist_content = playlist_content .. goalEntry .. "\n"
 				count = count + 1
-				if not SONGMAN:FindSong(goalFolder) then
-					AP.Trace("Archipelago warning: Unlocked Goal Song is not installed: " .. goalFolder)
+				if not SONGMAN:FindSong(goalEntry) then
+					AP.Trace("Archipelago warning: Unlocked Goal Song is not installed: " .. goalEntry)
 				end
 			end
 		end
