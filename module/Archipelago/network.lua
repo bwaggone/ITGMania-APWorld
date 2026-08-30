@@ -242,6 +242,23 @@ AP.HandleMessage = function(self, msg)
 					AP.slotOptions.goal_song = packet["slot_data"]["goal_song"] or ""
 					AP.slotOptions.bosskey_name = packet["slot_data"]["bosskey_name"] or "Boss Key"
 					AP.slotOptions.bosskeys_required = tonumber(packet["slot_data"]["bosskeys_required"]) or 0
+
+					if AP.slotOptions.goal_song and AP.slotOptions.goal_song ~= "" then
+						local parts = {}
+						for part in AP.slotOptions.goal_song:gmatch("[^/]+") do
+							table.insert(parts, part)
+						end
+						local folderName = nil
+						if #parts >= 2 then
+							folderName = parts[2]
+						elseif #parts == 1 then
+							folderName = parts[1]
+						end
+						if folderName then
+							AP.folderToChartName[folderName] = AP.slotOptions.goal_song
+						end
+					end
+
 					AP.Trace("Slot Options - Score Type: " .. tostring(AP.slotOptions.score_type) .. 
 					   ", Passing Score: " .. tostring(AP.slotOptions.passing_score) .. 
 					   ", Fail Allowed: " .. tostring(AP.slotOptions.fail_allowed) ..

@@ -20,8 +20,6 @@ def create_all_locations(world: ITGMania) -> None:
 
     # We want to add locations for each selected song based on enabled options
     all_selected_songs = world.starting_songs + world.included_songs
-    if world.options.game_mode == 1 and hasattr(world, "goal_song"):
-        all_selected_songs.append(world.goal_song)
 
     locations_to_add = {}
     for song_name in all_selected_songs:

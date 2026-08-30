@@ -154,9 +154,6 @@ def create_all_items(world: ITGMania) -> None:
         active_suffixes.append("-quint")
 
     num_charts = len(world.starting_songs) + len(world.included_songs)
-    if world.options.game_mode == 1:
-        num_charts += 1
-        
     location_count = num_charts * len(active_suffixes)
 
     # 1. Add 1 copy of every song in included_songs (these are the unlockable songs)

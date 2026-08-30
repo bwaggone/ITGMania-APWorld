@@ -311,11 +311,19 @@ AP.FinalizeEvaluationAndSendChecks = function()
 	local is_victory = false
 	if AP.slotOptions.game_mode == 1 then
 		-- Boss Key mode victory: Goal Song passed
-		if AP.slotOptions.goal_song then
-			local goal_loc_name = AP.slotOptions.goal_song .. "-0"
-			local goal_loc_id = AP.locationIds[goal_loc_name]
-			if goal_loc_id and AP.checkedLocations[goal_loc_id] then
-				is_victory = true
+		if AP.slotOptions.goal_song and AP.slotOptions.goal_song ~= "" then
+			if chart_name == AP.slotOptions.goal_song then
+				local fail_allowed = (AP.slotOptions.fail_allowed == true or AP.slotOptions.fail_allowed == 1)
+				for pn, pdata in pairs(AP.LastEvaluation.players) do
+					local is_failed = pdata.is_failed
+					local adjustedPercent = pdata.adjustedPercent or pdata.activePercent or 0
+					if not is_failed or fail_allowed then
+						if adjustedPercent >= (AP.slotOptions.passing_score or 0) then
+							is_victory = true
+							break
+						end
+					end
+				end
 			end
 		end
 	else

@@ -336,3 +336,36 @@ class TestITGManiaMultiplePlayers(unittest.TestCase):
             ITGMania.item_name_to_id = ITGMania.itgm_collection.item_names_to_id
 
 
+class TestITGManiaBossKeyMode(ITGManiaTestBase):
+    options = {
+        "game_mode": 1,
+        "number_of_charts": 10,
+        "number_of_starting_charts": 2,
+        "boss_key_count": 5,
+        "boss_keys_required": 3,
+        "boss_key_name": 0,
+    }
+
+    def test_boss_song_has_no_locations(self) -> None:
+        world = self.get_world()
+        self.assertTrue(hasattr(world, "goal_song"))
+        goal_song = world.goal_song
+
+        for suffix in ["-0", "-1", "-85", "-90", "-96", "-98", "-99", "-quad", "-quint"]:
+            loc_name = f"{goal_song}{suffix}"
+            self.assertNotIn(loc_name, world.multiworld.get_locations(world.player))
+
+    def test_boss_key_victory_condition(self) -> None:
+        world = self.get_world()
+        self.assertBeatable(False)
+
+        # Collect 2 boss keys (required is 3)
+        boss_keys = self.get_items_by_name("Boss Key")
+        self.collect(boss_keys[:2])
+        self.assertBeatable(False)
+
+        # Collect 3rd boss key
+        self.collect(boss_keys[2:3])
+        self.assertBeatable(True)
+
+
