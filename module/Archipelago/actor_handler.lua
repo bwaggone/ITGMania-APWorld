@@ -18,12 +18,13 @@ AP.MakeScreenActor = function(screenName)
 				pcall(AP.ConsumeCurrentTrap)
 				pcall(AP.ResetAllTrapPlayerOptions)
 				local apHandler = AP.GetAPHandlerInstance()
-				if apHandler and apHandler.connected and AP.seedName and AP.seedName ~= "Unknown" and SONGMAN:GetPreferredSortSongs() then
+				if not AP.hasDefaultedToSortOrderPreferred and apHandler and apHandler.connected and AP.seedName and AP.seedName ~= "Unknown" and SONGMAN:GetPreferredSortSongs() then
 					local top = SCREENMAN:GetTopScreen()
 					if top and top:GetName() == "ScreenSelectMusic" then
 						local wheel = top:GetMusicWheel()
 						if wheel then
 							wheel:ChangeSort("SortOrder_Preferred")
+							AP.hasDefaultedToSortOrderPreferred = true
 						end
 					end
 				end

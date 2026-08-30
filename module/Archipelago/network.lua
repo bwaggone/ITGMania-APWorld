@@ -82,6 +82,7 @@ AP.HandleMessage = function(self, msg)
 			local packet_cmd = packet["cmd"]
 			if packet_cmd == "RoomInfo" then
 				AP.seedName = packet["seed_name"] or "Unknown"
+				AP.hasDefaultedToSortOrderPreferred = false
 				AP.SaveLastSeed(AP.seedName)
 				AP.LoadCacheFromDisk()
 				AP.Trace("Received RoomInfo (Seed: " .. AP.seedName .. "). Requesting DataPackage...")

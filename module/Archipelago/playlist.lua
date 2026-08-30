@@ -76,12 +76,17 @@ AP.UpdatePlaylist = function()
 			-- Force C++ engine to reload the playlist from disk
 			SONGMAN:SetPreferredSongs(path, true)
 			
-			-- If currently on ScreenSelectMusic and sorted by Preferred, refresh the wheel
+			-- If currently on ScreenSelectMusic, refresh the wheel
 			local top = SCREENMAN:GetTopScreen()
 			if top and top:GetName() == "ScreenSelectMusic" then
 				local wheel = top:GetMusicWheel()
-				if wheel and GAMESTATE:GetSortOrder() == "SortOrder_Preferred" then
-					wheel:ChangeSort("SortOrder_Preferred")
+				if wheel then
+					if not AP.hasDefaultedToSortOrderPreferred then
+						wheel:ChangeSort("SortOrder_Preferred")
+						AP.hasDefaultedToSortOrderPreferred = true
+					elseif GAMESTATE:GetSortOrder() == "SortOrder_Preferred" then
+						wheel:ChangeSort("SortOrder_Preferred")
+					end
 				end
 			end
 		else
