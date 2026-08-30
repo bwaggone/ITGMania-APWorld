@@ -1,4 +1,4 @@
-# ITGMania Archipelago Module (v 0.5.0)
+# ITGMania Archipelago Module (v0.5.1)
 
 A Lua module for **ITGMania** that functions as a client integration for the **Archipelago Multiworld Randomizer**.
 It automatically synchronizes song unlocks, sends checks upon song clears/score thresholds, manages progression
@@ -49,12 +49,19 @@ For details about the world setup and options, see the [Archipelago ITGMania Wor
 2. Open `archipelago.ini` in a text editor and configure your connection credentials:
    ```ini
    [Archipelago]
-   Host = ws://localhost:38281
+   Host = wss://localhost:38281
    Slot = ITGManiaPlayer
    Password =
    ```
    *Note: While optimized for standard **Simply Love**, UI elements might require styling adjustments on theme forks (like Zmod, ArrowCloud, or DigitalDance).*
    *Extra Note: This is incompatible with DeadSync until it can support themes and Modules.*
+3. Navigate to the `preferences.ini` file inside your save directory. e.g. `%APPDATA%\Roaming\ITGmania\Save\preferences.ini` on Windows. Append your host to the `HttpAllowHosts` line:
+   For example,
+   ```
+   ...
+   HttpAllowHosts=[your other allowhosts],archipelago.gg
+   ...
+   ```
 
 ### 2. Multiworld Generation & Seed Setup
 1. In ITGMania, enter the song selection wheel (`ScreenSelectMusic`).
