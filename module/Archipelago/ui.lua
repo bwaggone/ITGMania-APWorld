@@ -282,7 +282,8 @@ AP.MakeStatusOverlayActor = function()
 				[1] = "EX",
 				[2] = "High EX"
 			}
-			local score_name = score_type_names[AP.slotOptions.score_type] or "EX"
+			local st = AP.NormalizeScoreType(AP.slotOptions.score_type)
+			local score_name = score_type_names[st] or "EX"
 			local passing_score = AP.slotOptions.passing_score or 0
 			local fail_str = AP.slotOptions.fail_allowed and " (Fail OK)" or " (No Fail)"
 			local clear_cond_str = string.format("Clear Condition: Minimum %.0f%% %s%s", passing_score, score_name, fail_str)
@@ -821,7 +822,9 @@ AP.MakeEvaluationOverlayActor = function()
 			"Available: %d (Total Received: %d)   |   Total Spent Globally: %d",
 			available, available + total_spent, total_spent
 		))
-		
+
+		local st = AP.NormalizeScoreType(AP.slotOptions.score_type)
+
 		-- Row score values (applied start at 0 since each play is a fresh start for consumable boosters)
 		local scores = {
 			{
@@ -829,21 +832,21 @@ AP.MakeEvaluationOverlayActor = function()
 				original = pdata.moneyPercent,
 				applied = 0,
 				proposed = proposed_items.money,
-				is_active = (AP.slotOptions.score_type == 0)
+				is_active = (st == 0)
 			},
 			{
 				name = "EX Score",
 				original = pdata.exPercent,
 				applied = 0,
 				proposed = proposed_items.ex,
-				is_active = (AP.slotOptions.score_type == 1)
+				is_active = (st == 1)
 			},
 			{
 				name = "High EX (HEX)",
 				original = pdata.highExPercent,
 				applied = 0,
 				proposed = proposed_items.hex,
-				is_active = (AP.slotOptions.score_type == 2)
+				is_active = (st == 2)
 			}
 		}
 		
@@ -899,9 +902,9 @@ AP.MakeEvaluationOverlayActor = function()
 		local adjHexScore = pdata.highExPercent + (proposed_hex_total * 0.25)
 		
 		local adjustedPercent = adjExScore
-		if AP.slotOptions.score_type == 0 then
+		if st == 0 then
 			adjustedPercent = adjMoneyScore
-		elseif AP.slotOptions.score_type == 2 then
+		elseif st == 2 then
 			adjustedPercent = adjHexScore
 		end
 		
@@ -1008,9 +1011,10 @@ AP.MakeEvaluationOverlayActor = function()
 		overlay_visible = not overlay_visible
 		proposed_items = { money = 0, ex = 0, hex = 0 }
 		
+		local st = AP.NormalizeScoreType(AP.slotOptions.score_type)
 		selected_row = 2
-		if AP.slotOptions.score_type == 0 then selected_row = 1
-		elseif AP.slotOptions.score_type == 2 then selected_row = 3
+		if st == 0 then selected_row = 1
+		elseif st == 2 then selected_row = 3
 		end
 		
 		local screen = SCREENMAN:GetTopScreen()
@@ -1244,4 +1248,3 @@ AP.MakeEvaluationOverlayActor = function()
 	
 	return af
 end
-

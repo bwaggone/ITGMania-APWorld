@@ -174,12 +174,13 @@ AP.EvaluateCompletedSong = function()
 			end
 			
 			-- Select score percentage based on option
-			local activePercent = moneyPercent
-			local score_system_name = "Money"
-			if AP.slotOptions.score_type == 1 then
-				activePercent = exPercent
-				score_system_name = "EX"
-			elseif AP.slotOptions.score_type == 2 then
+			local st = AP.NormalizeScoreType(AP.slotOptions.score_type)
+			local activePercent = exPercent
+			local score_system_name = "EX"
+			if st == 0 then
+				activePercent = moneyPercent
+				score_system_name = "Money"
+			elseif st == 2 then
 				activePercent = highExPercent
 				score_system_name = "High EX (FA+)"
 			end
@@ -245,10 +246,11 @@ AP.FinalizeEvaluationAndSendChecks = function()
 		local adjHex = highExPercent + (hex_applied * 0.25)
 		
 		-- Select adjusted percentage based on active score option
+		local st = AP.NormalizeScoreType(AP.slotOptions.score_type)
 		local adjustedPercent = adjEx
-		if AP.slotOptions.score_type == 0 then
+		if st == 0 then
 			adjustedPercent = adjMoney
-		elseif AP.slotOptions.score_type == 2 then
+		elseif st == 2 then
 			adjustedPercent = adjHex
 		end
 		
