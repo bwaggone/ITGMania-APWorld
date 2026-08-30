@@ -67,6 +67,8 @@ AP.armedTrapQueue = {}
 AP.deathlinkArmed = false
 AP.ignoreNextDeathReport = false
 AP.cachedHalfSpeedTarget = {}
+AP.currentSongTrap = nil
+AP.trapWasAppliedThisSong = false
 
 -- UI state
 AP.notificationQueue = {}
