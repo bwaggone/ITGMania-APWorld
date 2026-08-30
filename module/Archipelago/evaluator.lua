@@ -265,17 +265,17 @@ AP.FinalizeEvaluationAndSendChecks = function()
 			AP.Trace("Player " .. ToEnumShortString(pn) .. " CLEARED the song logic!")
 			queue_check("0")
 			queue_check("1")
-			
-			-- Check score thresholds
-			if adjustedPercent >= 85 then queue_check("85") end
-			if adjustedPercent >= 90 then queue_check("90") end
-			if adjustedPercent >= 96 then queue_check("96") end
-			if adjustedPercent >= 98 then queue_check("98") end
-			if adjustedPercent >= 99 then queue_check("99") end
 		else
 			AP.Trace("Player " .. ToEnumShortString(pn) .. " did not clear the song logic (Passing Score target: " .. tostring(AP.slotOptions.passing_score) .. "%)")
 		end
 		
+		-- Check score thresholds (independent of the minimum pass requirement)
+		if adjustedPercent >= 85 then queue_check("85") end
+		if adjustedPercent >= 90 then queue_check("90") end
+		if adjustedPercent >= 96 then queue_check("96") end
+		if adjustedPercent >= 98 then queue_check("98") end
+		if adjustedPercent >= 99 then queue_check("99") end
+
 		-- Quad and Quint are independent of the selected score_type
 		if adjMoney >= 100 then
 			AP.Trace("Player " .. ToEnumShortString(pn) .. " got a QUAD money score!")
