@@ -51,13 +51,7 @@ def set_all_rules(world: ITGMania) -> None:
         from .options import BOSS_KEY_NAME_BY_KEY
         bosskey_name = BOSS_KEY_NAME_BY_KEY[world.options.boss_key_name.current_key]
         bosskeys_required = min(world.options.boss_keys_required.value, world.options.boss_key_count.value)
-        goal_rule = lambda state: state.has(bosskey_name, player, bosskeys_required)
-        
-        goal_loc_names = [f"{world.goal_song}{suffix}" for suffix in active_suffixes]
-        for loc_name in goal_loc_names:
-            world.get_location(loc_name).access_rule = goal_rule
-
-        world.multiworld.completion_condition[player] = lambda state: state.can_reach(f"{world.goal_song}-0", "Location", player)
+        world.multiworld.completion_condition[player] = lambda state: state.has(bosskey_name, player, bosskeys_required)
     else:
         # Completion condition: must be able to reach at least `win_count` locations (charts) in total.
         def make_victory_rule(p: int, w: int, songs: list[str], suffixes: list[str]):

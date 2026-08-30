@@ -117,7 +117,7 @@ class ITGMania(World):
         if self.options.include_quad_score_checks: active_suffixes.append("-quad")
         if self.options.include_quint_score_checks: active_suffixes.append("-quint")
 
-        location_count = num_charts * len(active_suffixes)
+        location_count = len(self.starting_songs + self.included_songs) * len(active_suffixes)
         unlocks_count = len(self.included_songs)
         
         mandatory_items = unlocks_count
@@ -143,9 +143,9 @@ class ITGMania(World):
         if self.options.include_quint_score_checks:
             high_score_suffixes.append("-quint")
 
+        # Note we don't include the boss song in boss key hunt mode, as it is unlocked via the boss keys,
+        # and signals the end of the game upon completion.
         all_active_songs = self.starting_songs + self.included_songs
-        if self.options.game_mode == 1:
-            all_active_songs.append(self.goal_song)
 
         for song in all_active_songs:
             for suffix in high_score_suffixes:
