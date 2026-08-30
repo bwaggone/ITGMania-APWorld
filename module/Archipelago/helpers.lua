@@ -11,6 +11,21 @@ AP.playerNames = {}
 AP.slotInfo = {}
 AP.datapackage = {}
 
+AP.NormalizeScoreType = function(val)
+	if val == nil then return 1 end
+	if type(val) == "number" then
+		return math.floor(val)
+	elseif type(val) == "string" then
+		local num = tonumber(val)
+		if num then return math.floor(num) end
+		local s = val:lower():gsub("[%s_-]", "")
+		if s == "money" or s == "dancepoints" or s == "dp" then return 0 end
+		if s == "ex" then return 1 end
+		if s == "highex" or s == "hex" or s == "hardex" then return 2 end
+	end
+	return 1
+end
+
 AP.GetPlayerName = function(slot)
 	if not slot then return "Unknown Player" end
 	return AP.playerNames[slot] or ("Player " .. slot)

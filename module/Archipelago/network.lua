@@ -223,20 +223,24 @@ AP.HandleMessage = function(self, msg)
 				end
 				
 				if packet["slot_data"] then
-					AP.slotOptions.score_type = packet["slot_data"]["score_type"] or 1
-					AP.slotOptions.passing_score = packet["slot_data"]["passing_score"] or 0
+					if packet["slot_data"]["score_type"] ~= nil then
+						AP.slotOptions.score_type = AP.NormalizeScoreType(packet["slot_data"]["score_type"])
+					else
+						AP.slotOptions.score_type = 1
+					end
+					AP.slotOptions.passing_score = tonumber(packet["slot_data"]["passing_score"]) or 0
 					local fail_all = packet["slot_data"]["fail_allowed"]
-					AP.slotOptions.fail_allowed = (fail_all == true or fail_all == 1)
-					AP.slotOptions.win_count = packet["slot_data"]["win_count"] or 15
+					AP.slotOptions.fail_allowed = (fail_all == true or fail_all == 1 or fail_all == "true")
+					AP.slotOptions.win_count = tonumber(packet["slot_data"]["win_count"]) or 15
 					local enable_mod = packet["slot_data"]["enable_mod_items"]
-					AP.slotOptions.enable_mod_items = (enable_mod == true or enable_mod == 1)
+					AP.slotOptions.enable_mod_items = (enable_mod == true or enable_mod == 1 or enable_mod == "true")
 					local death_link = packet["slot_data"]["deathlink_enabled"]
-					AP.slotOptions.deathlink_enabled = (death_link == true or death_link == 1)
+					AP.slotOptions.deathlink_enabled = (death_link == true or death_link == 1 or death_link == "true")
 					AP.slotOptions.trap_items = packet["slot_data"]["trap_items"] or {}
-					AP.slotOptions.game_mode = packet["slot_data"]["game_mode"] or 0
+					AP.slotOptions.game_mode = tonumber(packet["slot_data"]["game_mode"]) or 0
 					AP.slotOptions.goal_song = packet["slot_data"]["goal_song"] or ""
 					AP.slotOptions.bosskey_name = packet["slot_data"]["bosskey_name"] or "Boss Key"
-					AP.slotOptions.bosskeys_required = packet["slot_data"]["bosskeys_required"] or 0
+					AP.slotOptions.bosskeys_required = tonumber(packet["slot_data"]["bosskeys_required"]) or 0
 					AP.Trace("Slot Options - Score Type: " .. tostring(AP.slotOptions.score_type) .. 
 					   ", Passing Score: " .. tostring(AP.slotOptions.passing_score) .. 
 					   ", Fail Allowed: " .. tostring(AP.slotOptions.fail_allowed) ..
@@ -270,26 +274,36 @@ AP.HandleMessage = function(self, msg)
 				end
 				
 				if packet["slot_data"] then
-					AP.slotOptions.score_type = packet["slot_data"]["score_type"] or AP.slotOptions.score_type
-					AP.slotOptions.passing_score = packet["slot_data"]["passing_score"] or AP.slotOptions.passing_score
+					if packet["slot_data"]["score_type"] ~= nil then
+						AP.slotOptions.score_type = AP.NormalizeScoreType(packet["slot_data"]["score_type"])
+					end
+					if packet["slot_data"]["passing_score"] ~= nil then
+						AP.slotOptions.passing_score = tonumber(packet["slot_data"]["passing_score"]) or AP.slotOptions.passing_score
+					end
 					if packet["slot_data"]["fail_allowed"] ~= nil then
 						local val = packet["slot_data"]["fail_allowed"]
-						AP.slotOptions.fail_allowed = (val == true or val == 1)
+						AP.slotOptions.fail_allowed = (val == true or val == 1 or val == "true")
 					end
-					AP.slotOptions.win_count = packet["slot_data"]["win_count"] or AP.slotOptions.win_count
+					if packet["slot_data"]["win_count"] ~= nil then
+						AP.slotOptions.win_count = tonumber(packet["slot_data"]["win_count"]) or AP.slotOptions.win_count
+					end
 					if packet["slot_data"]["enable_mod_items"] ~= nil then
 						local val = packet["slot_data"]["enable_mod_items"]
-						AP.slotOptions.enable_mod_items = (val == true or val == 1)
+						AP.slotOptions.enable_mod_items = (val == true or val == 1 or val == "true")
 					end
 					if packet["slot_data"]["deathlink_enabled"] ~= nil then
 						local val = packet["slot_data"]["deathlink_enabled"]
-						AP.slotOptions.deathlink_enabled = (val == true or val == 1)
+						AP.slotOptions.deathlink_enabled = (val == true or val == 1 or val == "true")
 					end
 					AP.slotOptions.trap_items = packet["slot_data"]["trap_items"] or AP.slotOptions.trap_items
-					AP.slotOptions.game_mode = packet["slot_data"]["game_mode"] or AP.slotOptions.game_mode
+					if packet["slot_data"]["game_mode"] ~= nil then
+						AP.slotOptions.game_mode = tonumber(packet["slot_data"]["game_mode"]) or AP.slotOptions.game_mode
+					end
 					AP.slotOptions.goal_song = packet["slot_data"]["goal_song"] or AP.slotOptions.goal_song
 					AP.slotOptions.bosskey_name = packet["slot_data"]["bosskey_name"] or AP.slotOptions.bosskey_name
-					AP.slotOptions.bosskeys_required = packet["slot_data"]["bosskeys_required"] or AP.slotOptions.bosskeys_required
+					if packet["slot_data"]["bosskeys_required"] ~= nil then
+						AP.slotOptions.bosskeys_required = tonumber(packet["slot_data"]["bosskeys_required"]) or AP.slotOptions.bosskeys_required
+					end
 					AP.Trace("Updated Slot Options - Score Type: " .. tostring(AP.slotOptions.score_type) .. 
 					   ", Passing Score: " .. tostring(AP.slotOptions.passing_score) .. 
 					   ", Fail Allowed: " .. tostring(AP.slotOptions.fail_allowed) ..
