@@ -754,13 +754,15 @@ AP.MakeEvaluationOverlayActor = function()
 		if passed_clear then
 			check_suffix("0", "Clear 1")
 			check_suffix("1", "Clear 2")
-			if adjustedScore >= 85 then check_suffix("85", "85% Check") end
-			if adjustedScore >= 90 then check_suffix("90", "90% Check") end
-			if adjustedScore >= 96 then check_suffix("96", "96% Check") end
-			if adjustedScore >= 98 then check_suffix("98", "98% Check") end
-			if adjustedScore >= 99 then check_suffix("99", "99% Check") end
 		end
 		
+		-- Score threshold checks are independent of minimum pass requirement
+		if adjustedScore >= 85 then check_suffix("85", "85% Check") end
+		if adjustedScore >= 90 then check_suffix("90", "90% Check") end
+		if adjustedScore >= 96 then check_suffix("96", "96% Check") end
+		if adjustedScore >= 98 then check_suffix("98", "98% Check") end
+		if adjustedScore >= 99 then check_suffix("99", "99% Check") end
+
 		if moneyAdjusted >= 100 then
 			check_suffix("quad", "Quad (100% Money)")
 		end
