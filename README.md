@@ -1,4 +1,4 @@
-# ITGMania Archipelago World (v0.5.0)
+# ITGMania Archipelago World (v0.5.1)
 
 An [Archipelago](https://archipelago.gg/) Multiworld Randomizer integration for [ITGMania](https://www.itgmania.com/). 
 
