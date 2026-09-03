@@ -215,14 +215,12 @@ AP.MakeConfigOverlayActor = function()
 						valText = val and "ENABLED" or "disabled"
 					elseif setting.type == "choice" then
 						valText = setting.choices[val + 1] or tostring(val)
-					elseif setting.type == "range" then
-						valText = tostring(val)
-					elseif setting.type == "text" then
+					elseif setting.type == "range" or setting.type == "text" then
 						local cursor = ""
 						if idx == selectedIndex then
 							cursor = (GetTimeSinceStart() % 0.8 < 0.4) and "|" or " "
 						end
-						valText = tostring(val) .. cursor
+						valText = tostring(val ~= nil and val or "") .. cursor
 					elseif setting.type == "goal_song" then
 						valText = (val and val ~= "") and AP.FormatNotificationName(val) or "(Random / Blank)"
 					elseif setting.type == "submenu" or setting.type == "action" then
@@ -382,6 +380,24 @@ AP.MakeConfigOverlayActor = function()
 		SCREENMAN:GetTopScreen():Load(settings)
 	end
 	
+	local function clampRangeSetting(setting)
+		if setting then
+			if setting.type == "range" then
+				local val = AP.configState[setting.key] or 0
+				if setting.min and val < setting.min then
+					AP.configState[setting.key] = setting.min
+				elseif setting.max and val > setting.max then
+					AP.configState[setting.key] = setting.max
+				end
+			elseif setting.key == "player_name" then
+				local name = AP.configState.player_name or ""
+				if #name > 16 then
+					AP.configState.player_name = name:sub(1, 16)
+				end
+			end
+		end
+	end
+
 	local function adjustRange(setting, delta)
 		local val = AP.configState[setting.key] or 0
 		val = val + delta
@@ -391,6 +407,10 @@ AP.MakeConfigOverlayActor = function()
 	end
 	
 	local function generateYAML()
+		for _, s in ipairs(settings) do
+			clampRangeSetting(s)
+		end
+
 		local traps = {}
 		for _, trap in ipairs(hardcodedTraps) do
 			if selectedTraps[trap] then
@@ -456,19 +476,26 @@ AP.MakeConfigOverlayActor = function()
 			return true
 		end
 
-		-- Detect if we are hovering a free text field
+		-- Detect if we are hovering an editable text or numeric range field
 		local active_field = nil
+		local active_setting = nil
 		if viewState == "main" then
 			local visSettings = getVisibleSettings()
 			local setting = visSettings[selectedIndex]
-			if setting and setting.key == "player_name" then
-				active_field = "player_name"
+			if setting then
+				if setting.key == "player_name" then
+					active_field = "player_name"
+					active_setting = setting
+				elseif setting.type == "range" then
+					active_field = "range"
+					active_setting = setting
+				end
 			end
 		elseif viewState == "goal_song" and selectedIndex == 1 then
 			active_field = "goal_song_filter"
 		end
 
-		-- If a text field is hovered, intercept typing and backspace
+		-- If an editable field is hovered, intercept typing and backspace
 		if active_field then
 			if key == "DeviceButton_backspace" then
 				if event.type == "InputEventType_FirstPress" or event.type == "InputEventType_Repeat" then
@@ -476,6 +503,13 @@ AP.MakeConfigOverlayActor = function()
 						local name = AP.configState.player_name or ""
 						if #name > 0 then
 							AP.configState.player_name = name:sub(1, -2)
+						end
+					elseif active_field == "range" then
+						local str = tostring(AP.configState[active_setting.key] or 0)
+						if #str > 1 then
+							AP.configState[active_setting.key] = tonumber(str:sub(1, -2)) or 0
+						else
+							AP.configState[active_setting.key] = 0
 						end
 					elseif active_field == "goal_song_filter" then
 						if #goalSongFilter > 0 then
@@ -500,6 +534,8 @@ AP.MakeConfigOverlayActor = function()
 					local shift_nums = { ["1"]="!", ["2"]="@", ["3"]="#", ["4"]="$", ["5"]="%", ["6"]="^", ["7"]="&", ["8"]='*', ["9"]="(", ["0"]=")" }
 					char = shift_nums[char] or char
 				end
+			elseif key and key:find("^DeviceButton_KP (%d)$") then
+				char = key:match("^DeviceButton_KP (%d)$")
 			elseif charMap[key] then
 				char = charMap[key]
 				if shift_pressed and key == "DeviceButton_hyphen" then
@@ -511,16 +547,33 @@ AP.MakeConfigOverlayActor = function()
 				if event.type == "InputEventType_FirstPress" or event.type == "InputEventType_Repeat" then
 					if active_field == "player_name" then
 						local name = AP.configState.player_name or ""
-						if #name < 32 then
+						if #name < 16 then
 							AP.configState.player_name = name .. char
+						end
+						SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
+					elseif active_field == "range" then
+						if char:match("^%d$") then
+							local current = tostring(AP.configState[active_setting.key] or 0)
+							local new_str
+							if current == "0" then
+								new_str = char
+							else
+								new_str = current .. char
+							end
+							local num = tonumber(new_str) or 0
+							if active_setting.max and num > active_setting.max then
+								num = active_setting.max
+							end
+							AP.configState[active_setting.key] = num
+							SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
 						end
 					elseif active_field == "goal_song_filter" then
 						if #goalSongFilter < 32 then
 							goalSongFilter = goalSongFilter .. char
 							cachedGoalSongs = nil
 						end
+						SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
 					end
-					SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
 				end
 				return true
 			end
@@ -560,6 +613,10 @@ AP.MakeConfigOverlayActor = function()
 		
 		if game_btn == "MenuDown" or key == "DeviceButton_down" then
 			if selectedIndex < itemsCount then
+				if viewState == "main" then
+					local visSettings = getVisibleSettings()
+					clampRangeSetting(visSettings[selectedIndex])
+				end
 				selectedIndex = selectedIndex + 1
 				if selectedIndex > scrollOffset + 11 then
 					scrollOffset = selectedIndex - 11
@@ -569,6 +626,10 @@ AP.MakeConfigOverlayActor = function()
 			return true
 		elseif game_btn == "MenuUp" or key == "DeviceButton_up" then
 			if selectedIndex > 1 then
+				if viewState == "main" then
+					local visSettings = getVisibleSettings()
+					clampRangeSetting(visSettings[selectedIndex])
+				end
 				selectedIndex = selectedIndex - 1
 				if selectedIndex < scrollOffset then
 					scrollOffset = selectedIndex
@@ -622,18 +683,10 @@ AP.MakeConfigOverlayActor = function()
 						val = (val + 1) % #setting.choices
 						AP.configState[setting.key] = val
 						SOUND:PlayOnce(THEME:GetPathS("Common", "Start"))
-					elseif setting.type == "text" then
-						-- Text is entered in-line when hovered; Start behaves as a confirm/feedback sound
+					elseif setting.type == "text" or setting.type == "range" then
+						-- Text / range is entered in-line when hovered; Start behaves as a confirm/feedback sound
+						clampRangeSetting(setting)
 						SOUND:PlayOnce(THEME:GetPathS("Common", "Start"))
-					elseif setting.type == "range" then
-						promptTextEntry("Enter " .. setting.name .. " (" .. setting.min .. "-" .. setting.max .. "):", AP.configState[setting.key] or 0, function(answer)
-							local num = tonumber(answer)
-							if num then
-								if num < setting.min then num = setting.min end
-								if num > setting.max then num = setting.max end
-								AP.configState[setting.key] = num
-							end
-						end)
 					elseif setting.type == "submenu" then
 						viewState = setting.target
 						selectedIndex = 1
