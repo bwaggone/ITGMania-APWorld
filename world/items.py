@@ -37,7 +37,7 @@ CLUB_FANTASTIC_POOLS = [
     "Club Fantastic Season 1/Melody Mountain",
     "Club Fantastic Season 1/Oceania 909",
     "Club Fantastic Season 1/Roadman",
-    "Club Fantastic Season 1/Shoes",
+    "Club Fantastic Season 1/Shoes (Club Fantastic Edit)",
     "Club Fantastic Season 1/Six Million",
     "Club Fantastic Season 1/Wandering (VIP)",
     "Club Fantastic Season 1/Y.E.A.H.",
