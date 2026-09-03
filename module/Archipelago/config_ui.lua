@@ -381,12 +381,19 @@ AP.MakeConfigOverlayActor = function()
 	end
 	
 	local function clampRangeSetting(setting)
-		if setting and setting.type == "range" then
-			local val = AP.configState[setting.key] or 0
-			if setting.min and val < setting.min then
-				AP.configState[setting.key] = setting.min
-			elseif setting.max and val > setting.max then
-				AP.configState[setting.key] = setting.max
+		if setting then
+			if setting.type == "range" then
+				local val = AP.configState[setting.key] or 0
+				if setting.min and val < setting.min then
+					AP.configState[setting.key] = setting.min
+				elseif setting.max and val > setting.max then
+					AP.configState[setting.key] = setting.max
+				end
+			elseif setting.key == "player_name" then
+				local name = AP.configState.player_name or ""
+				if #name > 16 then
+					AP.configState.player_name = name:sub(1, 16)
+				end
 			end
 		end
 	end
@@ -401,9 +408,7 @@ AP.MakeConfigOverlayActor = function()
 	
 	local function generateYAML()
 		for _, s in ipairs(settings) do
-			if s.type == "range" then
-				clampRangeSetting(s)
-			end
+			clampRangeSetting(s)
 		end
 
 		local traps = {}
@@ -542,7 +547,7 @@ AP.MakeConfigOverlayActor = function()
 				if event.type == "InputEventType_FirstPress" or event.type == "InputEventType_Repeat" then
 					if active_field == "player_name" then
 						local name = AP.configState.player_name or ""
-						if #name < 32 then
+						if #name < 16 then
 							AP.configState.player_name = name .. char
 						end
 						SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
