@@ -181,7 +181,6 @@ AP.HandleMessage = function(self, msg)
 			elseif packet_cmd == "Connected" then
 				self.connected = true
 				AP.initialSyncComplete = false
-				AP.connectedSlotName = packet.slot
 				AP.slotID = packet.slot
 				AP.LoadBonusUsage()
 				AP.Trace("Successfully connected to Archipelago! Slot: " .. tostring(packet.slot))
@@ -205,6 +204,8 @@ AP.HandleMessage = function(self, msg)
 						}
 					end
 				end
+
+				AP.connectedSlotName = AP.GetPlayerName(packet.slot)
 
 				-- Save updated cache to disk
 				AP.SaveCacheToDisk()

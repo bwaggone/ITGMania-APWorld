@@ -33,7 +33,7 @@ AP.MakePopupActor = function(screenName)
 			
 			-- Handle startup connection popup if initial sync completed before UI loaded
 			if AP.initialSyncComplete and AP.lastConnectedState ~= true and AP.apHandlerInstance and AP.apHandlerInstance.connected then
-				local slotName = AP.SLOT or "Unknown"
+				local slotName = AP.GetPlayerName(AP.slotID)
 				AP.QueueNotification({ type = "Connected", name = slotName })
 				AP.lastConnectedState = true
 			end
