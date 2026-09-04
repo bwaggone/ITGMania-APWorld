@@ -1,4 +1,4 @@
-# ITGMania Archipelago Module (v0.5.1)
+# ITGMania Archipelago Module
 
 A Lua module for **ITGMania** that functions as a client integration for the **Archipelago Multiworld Randomizer**.
 It automatically synchronizes song unlocks, sends checks upon song clears/score thresholds, manages progression
