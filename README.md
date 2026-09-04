@@ -72,7 +72,7 @@ ITGMania-APWorld/
 2. Open `archipelago.ini` in a text editor to configure connection settings:
    ```ini
    [Archipelago]
-   Host = ws://archipelago.gg:38281   # Multiworld server host and port
+   Host = wss://archipelago.gg:38281   # Multiworld server host and port
    Slot = ITGManiaPlayer              # Player slot name (must match your YAML player name)
    Password =                         # Room password (if required)
    ```
