@@ -3,13 +3,23 @@
 local AP = ...
 
 AP.cachedHalfSpeedTarget = AP.cachedHalfSpeedTarget or {}
+AP.cachedMiniTarget = AP.cachedMiniTarget or {}
 AP.debugAnnouncedThisSong = AP.debugAnnouncedThisSong or {}
 AP.currentSongTrap = AP.currentSongTrap or nil
 AP.trapWasAppliedThisSong = AP.trapWasAppliedThisSong or false
 
 local TRAP_APPLIERS = {
 	["Trap - Reverse Scroll"] = function(pOptions) pOptions:Reverse(1, 100); return 1, "Reverse" end,
-	["Trap - Mini"] = function(pOptions) pOptions:Mini(0.5, 100); return 0.5, "Mini" end,
+	["Trap - Mini"] = function(pOptions, pn)
+		if AP.cachedMiniTarget[pn] == nil then
+			local magnitude = math.random(20, 50) / 100
+			local sign = math.random(0, 1) == 0 and -1 or 1
+			AP.cachedMiniTarget[pn] = magnitude * sign
+		end
+		local pct = AP.cachedMiniTarget[pn]
+		pOptions:Mini(pct, 100)
+		return pct, "Mini"
+		end,
 	["Trap - Dark"] = function(pOptions) pOptions:Dark(0.95, 100); return 0.95, "Dark" end,
 	["Trap - Half Speed"] = function(pOptions, pn)
 		if AP.cachedHalfSpeedTarget[pn] == nil then
@@ -131,6 +141,7 @@ end
 
 AP.ConsumeCurrentTrap = function()
 	AP.cachedHalfSpeedTarget = {}
+	AP.cachedMiniTarget = {}
 	AP.debugAnnouncedThisSong = {}
 	if AP.currentSongTrap ~= nil then
 		for i, trapName in ipairs(AP.armedTrapQueue) do
