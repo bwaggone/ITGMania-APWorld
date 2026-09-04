@@ -924,26 +924,45 @@ AP.MakeEvaluationOverlayActor = function()
 		container:GetChild("PassedText"):settext(passed_str)
 	end
 
+	local function getSLEventOverlay()
+		local screen = SCREENMAN:GetTopScreen()
+		if not screen then return nil, nil end
+		local overlay = screen:GetChild("Overlay")
+		local evalCommon = overlay and overlay:GetChild("ScreenEval Common")
+		local autoSubmitMaster = evalCommon and evalCommon:GetChild("AutoSubmitMaster")
+		local eventOverlay = autoSubmitMaster and autoSubmitMaster:GetChild("EventOverlay")
+		return eventOverlay, evalCommon
+	end
+
+	local function checkAndSuppressSLEventOverlay(self)
+		if not overlay_visible then return end
+		local eventOverlay, evalCommon = getSLEventOverlay()
+		if eventOverlay and eventOverlay:GetVisible() then
+			eventOverlay:visible(false)
+			AP.pendingSLEventOverlay = true
+		end
+	end
+
 	local function input(event)
 		if not overlay_visible then return false end
 		if not event then return false end
 		
 		if event.type ~= "InputEventType_FirstPress" then
-			return false
+			return true -- Consume repeat / release events while overlay is active
 		end
 		
 		local key = event.DeviceInput and event.DeviceInput.button
 		local game_btn = event.GameButton
 		
 		-- Global escape / cancel keys (may not have event.PlayerNumber)
-		if key == "DeviceButton_escape" or key == "DeviceButton_F11" or key == "DeviceButton_b" or game_btn == "Back" or game_btn == "Select" then
+		if key == "DeviceButton_escape" or key == "DeviceButton_F10" or key == "DeviceButton_b" or game_btn == "Back" or game_btn == "Select" then
 			AP.FinalizeEvaluationAndSendChecks()
 			toggleOverlay()
 			return true
 		end
 		
 		if not (event.PlayerNumber and event.button) then
-			return false
+			return true
 		end
 		
 		local available_items = AP.GetAvailableBonusItems()
@@ -1020,21 +1039,60 @@ AP.MakeEvaluationOverlayActor = function()
 		local screen = SCREENMAN:GetTopScreen()
 		if not screen then return end
 		
+		local eventOverlay, evalCommon = getSLEventOverlay()
+
 		if overlay_visible then
 			SOUND:PlayOnce(THEME:GetPathS("Common", "Start"))
 			
+			-- If Simply Love's EventOverlay is already visible when we open, hide and defer it
+			if eventOverlay and eventOverlay:GetVisible() then
+				eventOverlay:visible(false)
+				AP.pendingSLEventOverlay = true
+			end
+
 			for player in ivalues(PlayerNumber) do
 				SCREENMAN:set_input_redirected(player, true)
 			end
+
+			if evaluation_overlay_actor then
+				evaluation_overlay_actor:SetUpdateFunction(checkAndSuppressSLEventOverlay)
+			end
 		else
 			SOUND:PlayOnce(THEME:GetPathS("Common", "Cancel"))
-			
-			for player in ivalues(PlayerNumber) do
-				SCREENMAN:set_input_redirected(player, false)
+
+			if evaluation_overlay_actor then
+				evaluation_overlay_actor:SetUpdateFunction(nil)
+			end
+
+			-- Handoff to pending SL EventOverlay if one arrived while we were active
+			if AP.pendingSLEventOverlay and eventOverlay and evalCommon then
+				eventOverlay:visible(true)
+				evalCommon:queuecommand("DirectInputToEventOverlayHandler")
+				AP.pendingSLEventOverlay = false
+			else
+				-- If no SL EventOverlay is pending or currently visible, safely return input to engine
+				if not (eventOverlay and eventOverlay:GetVisible()) then
+					for player in ivalues(PlayerNumber) do
+						SCREENMAN:set_input_redirected(player, false)
+					end
+					if evalCommon then
+						evalCommon:queuecommand("DirectInputToEngine")
+					end
+				end
 			end
 		end
 		
 		MESSAGEMAN:Broadcast("APBonusRefresh")
+	end
+
+	local function F10_listener(event)
+		if event.type == "InputEventType_FirstPress" and event.DeviceInput and event.DeviceInput.button == "DeviceButton_F10" then
+			if evaluation_overlay_actor then
+				evaluation_overlay_actor:playcommand("ToggleOverlay")
+			end
+			return true
+		end
+		return false
 	end
 
 	local af = Def.ActorFrame {
@@ -1047,9 +1105,12 @@ AP.MakeEvaluationOverlayActor = function()
 		ModuleCommand = function(self)
 			local screen = SCREENMAN:GetTopScreen()
 			if screen then
+				screen:RemoveInputCallback(F10_listener)
+				screen:AddInputCallback(F10_listener)
 				screen:RemoveInputCallback(input)
 				screen:AddInputCallback(input)
 			end
+			AP.pendingSLEventOverlay = false
 			MESSAGEMAN:Broadcast("APBonusRefresh")
 			
 			-- Auto-popup if they have available items, otherwise finalize immediately
@@ -1066,14 +1127,17 @@ AP.MakeEvaluationOverlayActor = function()
 			end
 		end,
 		OffCommand = function(self)
+			self:SetUpdateFunction(nil)
 			local screen = SCREENMAN:GetTopScreen()
 			if screen then
+				screen:RemoveInputCallback(F10_listener)
 				screen:RemoveInputCallback(input)
 				for player in ivalues(PlayerNumber) do
 					SCREENMAN:set_input_redirected(player, false)
 				end
 			end
 			overlay_visible = false
+			AP.pendingSLEventOverlay = false
 			-- Ensure checks are finalized and sent if leaving screen
 			AP.FinalizeEvaluationAndSendChecks()
 		end,
