@@ -612,7 +612,7 @@ AP.MakeStatusOverlayActor = function()
 					Name = "ProgressText",
 					Text = "",
 					InitCommand = function(self)
-						self:y(-148):zoom(0.6):diffuse(1, 1, 1, 1)
+						self:y(-148):zoom(0.5):diffuse(1, 1, 1, 1)
 					end
 				},
 				
