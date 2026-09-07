@@ -11,18 +11,24 @@ AP.SendDeathLink = function()
 	end
 
 	AP.Trace("Sending DeathLink to server...")
-	local bounce_packet = {
-		["cmd"] = "Bounce",
-		tags = { "DeathLink" },
-		data = {
-			time = os.time(),
-			source = AP.SLOT,
-			cause = AP.SLOT .. " failed a song."
-		}
+local bounce_packet = {
+	["cmd"] = "Bounce",
+	tags = { "DeathLink" },
+	data = {
+		time = GetTimeSinceStart(),
+		source = AP.SLOT,
+		cause = AP.SLOT .. " failed a song."
 	}
+}
 	if AP.apHandlerInstance and AP.apHandlerInstance.connected and AP.apHandlerInstance.socket then
-		AP.apHandlerInstance.socket:Send(JsonEncode({ bounce_packet }), false)
-	end
+	AP.apHandlerInstance.socket:Send(JsonEncode({ bounce_packet }), false)
+	AP.Trace("DeathLink Bounce packet sent.")
+else
+	AP.Trace("DeathLink NOT sent - apHandlerInstance=" .. tostring(AP.apHandlerInstance ~= nil)
+		.. ", connected=" .. tostring(AP.apHandlerInstance and AP.apHandlerInstance.connected)
+		.. ", socket=" .. tostring(AP.apHandlerInstance and AP.apHandlerInstance.socket ~= nil))
+end
+
 end
 
 AP.TriggerDeathLinkFailure = function()
