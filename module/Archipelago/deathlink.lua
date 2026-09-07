@@ -21,8 +21,14 @@ AP.SendDeathLink = function()
 		}
 	}
 	if AP.apHandlerInstance and AP.apHandlerInstance.connected and AP.apHandlerInstance.socket then
-		AP.apHandlerInstance.socket:Send(JsonEncode({ bounce_packet }), false)
-	end
+	AP.apHandlerInstance.socket:Send(JsonEncode({ bounce_packet }), false)
+	AP.Trace("DeathLink Bounce packet sent.")
+else
+	AP.Trace("DeathLink NOT sent - apHandlerInstance=" .. tostring(AP.apHandlerInstance ~= nil)
+		.. ", connected=" .. tostring(AP.apHandlerInstance and AP.apHandlerInstance.connected)
+		.. ", socket=" .. tostring(AP.apHandlerInstance and AP.apHandlerInstance.socket ~= nil))
+end
+
 end
 
 AP.TriggerDeathLinkFailure = function()
