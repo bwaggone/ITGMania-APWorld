@@ -462,7 +462,7 @@ AP.MakeStatusOverlayActor = function()
 				local game_btn = event.GameButton
 
 				-- Global escape / cancel / close keys
-				if key == "DeviceButton_escape" or key == "DeviceButton_F10" or game_btn == "Back" or game_btn == "Start" then
+				if key == "DeviceButton_escape" or key == "DeviceButton_F10" or game_btn == "Back" or game_btn == "Select" or game_btn == "Start" then
 					toggleOverlay(self)
 					return true
 				end
@@ -489,7 +489,7 @@ AP.MakeStatusOverlayActor = function()
 					return true
 				end
 
-				if not (event.PlayerNumber and event.button) then
+				if not (event.PlayerNumber and event.button and GAMESTATE:IsSideJoined(event.PlayerNumber)) then
 					return true
 				end
 
@@ -955,16 +955,20 @@ AP.MakeEvaluationOverlayActor = function()
 		container:GetChild("PassedText"):settext(passed_str)
 	end
 
-	local function getSLEventOverlay()
+	local function getSLEvalActors()
 		local screen = SCREENMAN:GetTopScreen()
 		if not screen or type(screen.GetChild) ~= "function" then return nil, nil end
 		local overlay = screen:GetChild("Overlay")
 		if not overlay or type(overlay.GetChild) ~= "function" then return nil, nil end
 		local evalCommon = overlay:GetChild("ScreenEval Common")
 		if not evalCommon or type(evalCommon.GetChild) ~= "function" then return nil, nil end
+
+		local eventOverlay = nil
 		local autoSubmitMaster = evalCommon:GetChild("AutoSubmitMaster")
-		if not autoSubmitMaster or type(autoSubmitMaster.GetChild) ~= "function" then return nil, nil end
-		local eventOverlay = autoSubmitMaster:GetChild("EventOverlay")
+		if autoSubmitMaster and type(autoSubmitMaster.GetChild) == "function" then
+			eventOverlay = autoSubmitMaster:GetChild("EventOverlay")
+		end
+
 		return eventOverlay, evalCommon
 	end
 
@@ -981,7 +985,7 @@ AP.MakeEvaluationOverlayActor = function()
 		if overlay_visible then
 			SOUND:PlayOnce(THEME:GetPathS("Common", "Start"))
 			if evaluation_overlay_actor then
-				evaluation_overlay_actor:playcommand("DirectInputToAPEvalOverlay")
+				evaluation_overlay_actor:queuecommand("DirectInputToAPEvalOverlay")
 			end
 		else
 			SOUND:PlayOnce(THEME:GetPathS("Common", "Cancel"))
@@ -1034,7 +1038,7 @@ AP.MakeEvaluationOverlayActor = function()
 			end
 			
 			-- Defensively release any leftover input redirection (e.g. from Ctrl+R restarts)
-			self:playcommand("DirectInputToEngineFromEvalOverlay")
+			self:queuecommand("DirectInputToEngineFromEvalOverlay")
 			
 			overlay_visible = false
 			AP.pendingSLEventOverlay = false
@@ -1057,10 +1061,14 @@ AP.MakeEvaluationOverlayActor = function()
 			local top = SCREENMAN:GetTopScreen()
 			if not top then return end
 
-			local eventOverlay, evalCommon = getSLEventOverlay()
+			local eventOverlay, evalCommon = getSLEvalActors()
 			if eventOverlay and eventOverlay:GetVisible() then
 				eventOverlay:visible(false)
 				AP.pendingSLEventOverlay = true
+			end
+
+			if evalCommon then
+				evalCommon:playcommand("DirectInputToEventOverlayHandler")
 			end
 
 			for player in ivalues(PlayerNumber) do
@@ -1092,7 +1100,7 @@ AP.MakeEvaluationOverlayActor = function()
 					return true
 				end
 
-				if not (event.PlayerNumber and event.button) then
+				if not (event.PlayerNumber and event.button and GAMESTATE:IsSideJoined(event.PlayerNumber)) then
 					return true
 				end
 
@@ -1171,10 +1179,10 @@ AP.MakeEvaluationOverlayActor = function()
 			end
 			self.evalOverlayInputHandler = nil
 
-			local eventOverlay, evalCommon = getSLEventOverlay()
+			local eventOverlay, evalCommon = getSLEvalActors()
 			if AP.pendingSLEventOverlay and eventOverlay and evalCommon then
 				eventOverlay:visible(true)
-				evalCommon:queuecommand("DirectInputToEventOverlayHandler")
+				evalCommon:playcommand("DirectInputToEventOverlayHandler")
 				AP.pendingSLEventOverlay = false
 			else
 				if not (eventOverlay and eventOverlay:GetVisible()) then
@@ -1182,7 +1190,7 @@ AP.MakeEvaluationOverlayActor = function()
 						SCREENMAN:set_input_redirected(player, false)
 					end
 					if evalCommon then
-						evalCommon:queuecommand("DirectInputToEngine")
+						evalCommon:playcommand("DirectInputToEngine")
 					end
 				end
 			end
