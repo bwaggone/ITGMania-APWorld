@@ -1174,6 +1174,7 @@ AP.MakeEvaluationOverlayActor = function()
 		end,
 		DirectInputToEngineFromEvalOverlayCommand = function(self)
 			local top = SCREENMAN:GetTopScreen()
+			local had_handler = (self.evalOverlayInputHandler ~= nil)
 			if top and self.evalOverlayInputHandler and type(top.RemoveInputCallback) == "function" then
 				top:RemoveInputCallback(self.evalOverlayInputHandler)
 			end
@@ -1189,7 +1190,7 @@ AP.MakeEvaluationOverlayActor = function()
 					for player in ivalues(PlayerNumber) do
 						SCREENMAN:set_input_redirected(player, false)
 					end
-					if evalCommon then
+					if evalCommon and had_handler then
 						evalCommon:playcommand("DirectInputToEngine")
 					end
 				end
