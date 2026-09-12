@@ -1,4 +1,4 @@
-# ITGMania Archipelago World (v0.5.2)
+# ITGMania Archipelago World (v0.5.3)
 
 An [Archipelago](https://archipelago.gg/) Multiworld Randomizer integration for [ITGMania](https://www.itgmania.com/).
 
@@ -162,6 +162,17 @@ To install the world package into your Archipelago installation:
 ---
 
 ## 🛠️ Development & Testing
+
+* **Packaging Releases**:
+  To generate the release packages (`dist/itgmania.apworld` and `dist/module.zip`):
+  ```bash
+  python package.py --clean
+  ```
+  Options:
+  * `--version <X.Y.Z>`: Override release version.
+  * `--apworld-only`: Build only `itgmania.apworld`.
+  * `--module-only`: Build only `module.zip`.
+  * `--validate-only`: Validate existing packages in `dist/`.
 
 * **Running Logic Tests**:
   ```bash

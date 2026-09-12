@@ -1,4 +1,5 @@
 {
   "game": "ITGMania",
-  "authors": ["bwags", "HeeroJay"]
+  "world_version": "0.5.3",
+  "authors": ["bswagg", "HeeroJay"]
 }

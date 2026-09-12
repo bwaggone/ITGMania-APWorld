@@ -1,2 +1,9 @@
 **__pycache__/
 **logs/
+*.pyc
+*.pyo
+.pytest_cache/
+dist/
+build/
+*.apworld
+*.zip
