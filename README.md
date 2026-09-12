@@ -1,6 +1,6 @@
 # ITGMania Archipelago World (v0.5.2)
 
-An [Archipelago](https://archipelago.gg/) Multiworld Randomizer integration for [ITGMania](https://www.itgmania.com/). 
+An [Archipelago](https://archipelago.gg/) Multiworld Randomizer integration for [ITGMania](https://www.itgmania.com/).
 
 This repository contains both the **Archipelago World (`.apworld`)** generator code and the **ITGMania Client Module**.
 
@@ -8,28 +8,23 @@ This repository contains both the **Archipelago World (`.apworld`)** generator c
 
 ## 📁 Repository Structure
 
-```
-ITGMania-APWorld/
-├── module/                  # ITGMania Client Module (Lua)
-│   ├── Archipelago/         # Sub-modules (network, UI, evaluator, playlist, traps, etc.)
-│   ├── archipelago.lua      # Theme module entry point
-│   ├── archipelago.ini.example # Example client connection configuration
-│   └── README.md            # Module-specific documentation
-└── world/                   # Archipelago World Package (Python / .apworld)
-    ├── docs/                # Setup & options documentation
-    ├── helpers/             # Song dumping and utility scripts
-    ├── test/                # Logic and generation unit tests
-    ├── ITGManiaCollection.py# Main song catalog code & custom pool parser
-    ├── __init__.py          # APWorld entry point
-    ├── archipelago.json     # APWorld metadata
-    ├── items.py             # Item definitions (songs, keys, mods, boosters, traps)
-    ├── locations.py         # Location definitions (clear checks, score thresholds)
-    ├── options.py           # Multiworld YAML player options
-    ├── regions.py           # Region graph & world access rules
-    ├── rules.py             # Clear count, boss key, and mod requirement logic
-    ├── web_world.py         # Web interface integration
-    └── world.py             # ITGManiaWorld class lifecycle
-```
+The project is organized into two primary components:
+
+* **Client Module (`module/`)**:
+  A Lua-based theme module designed for ITGMania (Simply Love). Runs directly inside the game engine to provide:
+  * An interactive, in-game YAML configuration tool with custom song library selection.
+  * Real-time WebSocket connectivity to Archipelago servers with item sync and check tracking.
+  * Live song unlock and playlist synchronization.
+  * In-game status overlay dashboard (**`F10`**).
+  * Interactive Score Booster allocation panel on the song evaluation screen.
+  * Modifiers, Traps, and DeathLink support.
+
+* **Archipelago World Package (`world/`)**:
+  The Python `.apworld` package installed into the Archipelago multiworld generator/server (`custom_worlds/` or `lib/worlds/`). It handles:
+  * Multiworld item and location generation logic.
+  * Dynamic catalog parsing and merging of custom song pools from player YAMLs.
+  * Boss Key and Clear Count game modes, access rules, and score thresholds.
+  * Web interface metadata and unit tests.
 
 ---
 
@@ -42,9 +37,9 @@ ITGMania-APWorld/
   * Direct in-game configuration tool accessible from Simply Love's music wheel sort menu.
   * Interactive library scanner: select custom packs or songs to build a `custom_song_pool`.
   * Exports formatted Archipelago player YAML directly to disk (`Save/Archipelago/YAMLS/`).
-* **Live Music Wheel & Playlist Sync**:
-  * Unlocked charts are automatically appended to a local playlist (`Archipelago - <SeedName>.txt`).
-  * Triggers the ITGMania C++ engine to reload the playlist live. When sorted by **Preferred** on `ScreenSelectMusic`, newly received charts appear instantly.
+* **Live Song Unlock & Playlist Sync**:
+  * Unlocked charts are automatically tracked and written to a local playlist (`Archipelago - <SeedName>.txt`).
+  * Triggers the ITGMania C++ engine to reload the playlist live as new songs are received.
 * **In-Game Status Dashboard (`F10`)**:
   * Press **`F10`** on the music wheel to view seed status, goal progression, active modifier limits, and unlocked songs.
   * Inspect individual songs to check clear targets (Money/EX/High EX threshold, fail allowance) and check statuses (`[x]` / `[ ]`).
@@ -62,6 +57,10 @@ ITGMania-APWorld/
 
 ## 🚀 Quick Start Guide
 
+### Prerequisites
+* [ITGMania](https://www.itgmania.com/) (0.9.0+)
+* [Simply Love](https://github.com/itgmania/simply-love-itgmania) theme
+
 ### 1. Client Installation (ITGMania)
 
 1. Copy the contents of the `module/` directory (`archipelago.lua` and the `Archipelago/` folder) into your Simply Love theme modules folder:
@@ -69,7 +68,13 @@ ITGMania-APWorld/
    ITGMania/Themes/Simply Love/Modules/
    ```
    *(Note: Designed for **Simply Love**. UI layout may require adjustments on theme forks like Zmod, ArrowCloud, or DigitalDance).*
-2. Copy `module/archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\Archipelago\archipelago.ini` on Windows), or start the game once to generate it automatically, then configure your connection credentials:
+
+2. Whitelist the server host in your ITGMania preferences. Open `preferences.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\preferences.ini` on Windows) and append your server host to the `HttpAllowHosts` entry:
+   ```ini
+   HttpAllowHosts=localhost,archipelago.gg
+   ```
+
+3. Copy `module/archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (or launch the game once with the module installed to generate it automatically):
    ```ini
    [Archipelago]
    Host = ws://localhost:38281        # Multiworld server host and port (use wss:// for public servers like archipelago.gg)
@@ -82,7 +87,7 @@ ITGMania-APWorld/
 To install the world package into your Archipelago installation:
 
 * **As an `.apworld` bundle**:
-  Place the `.apworld` bundle from the releases page into your `custom_worlds` or `lib/worlds` directory.
+  Place the `.apworld` bundle from the releases page into your Archipelago `custom_worlds/` or `lib/worlds/` directory.
 * **Direct source**:
   Zip the contents of the `world/` folder (so `__init__.py` and `archipelago.json` are at the root of the archive) and rename the extension to `.apworld` (e.g., `itgmania.apworld`). Place it in your Archipelago `custom_worlds/` or `lib/worlds/` directory.
 
@@ -95,7 +100,7 @@ To install the world package into your Archipelago installation:
 2. Open the Sort Menu (press **`Left` + `Right`** simultaneously).
 3. Select **`AP Config Tool`**.
 4. Adjust your settings:
-   * **Player Name**: Set your slot name.
+   * **Player Name**: Set your slot name (must match the `Slot` in `archipelago.ini`).
    * **Game Mode**: Choose **Boss Key** or **Clear Count**.
    * **Scoring Rules**: Set your target score system (Money, EX, High EX) and minimum passing score.
    * **Score Checks**: Enable additional check thresholds per song (85%, 90%, 96%, 98%, 99%, Quad, Quint).
@@ -109,12 +114,12 @@ To install the world package into your Archipelago installation:
 ### Step 2: Generate Multiworld Seed
 1. Provide your generated `[PlayerName].yaml` to the multiworld host or place it into the Archipelago `Players/` directory.
 2. If custom song pools are used, the generator will parse player YAMLs and build the unified song catalog automatically. (If no custom song pool is configured, it falls back to **Club Fantastic Seasons 1 & 2**).
-3. Generate the seed.
+3. Generate the multiworld seed.
 
 ### Step 3: Connect & Play
-1. Ensure your `archipelago.ini` has the correct `Host` and `Slot` name.
+1. Ensure your `Save/Archipelago/archipelago.ini` has the correct `Host` and `Slot` name for the generated room.
 2. Launch ITGMania. The client module will connect to the server in the background.
-3. On `ScreenSelectMusic`, change your sort to **Preferred** to view your unlocked Archipelago song wheel.
+3. Unlocked charts will sync to your game automatically as you receive them.
 4. Clear songs and achieve score thresholds to send checks and receive progression items!
 
 ---
@@ -158,9 +163,10 @@ To install the world package into your Archipelago installation:
 
 ## 🛠️ Development & Testing
 
-* **Running Tests**:
+* **Running Logic Tests**:
   ```bash
   pytest world/test/test_logic.py
   ```
 * **Debug Logging**:
   Monitor `AppData/Roaming/ITGmania/Logs/log.txt` (look for `[AP-Module]` logs).
+

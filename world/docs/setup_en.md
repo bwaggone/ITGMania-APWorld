@@ -4,52 +4,46 @@ ITGMania is a rhythm game engine. This guide explains how to set up ITGMania to 
 
 ## Overview
 
-There are **two** possible game modes.
+There are **two** possible game modes:
 
-1. Boss Key Hunt
-
-In this mode, boss keys are randomly placed throughout your song pool. Collect them to unlock a boss song. Complete the
-boss song, and you win your run. You unlock songs from your pool throughout the run in addition to the keys.
-
-2. Clear Count
-
-In this mode, simply clear the desired number of songs from your song pool, and you win. You can configure the number of
-starting songs and unlockable songs.
+1. **Boss Key Hunt**: Boss keys are randomly placed throughout your song pool in the multiworld. Collect the required number of keys to unlock a designated Goal Song. Clear the Goal Song to win your run.
+2. **Clear Count**: Clear a configured number of unlocked songs from your pool to achieve victory.
 
 ## Song Pool
 
-If unspecified, the world will generate using the Club Fantastic Seasons 1 and 2 packs as your song pool. However, by using the
-[ITGMania Archipelago Client Module](https://github.com/bwaggone/ITGMania-Archipelago-Module), you can create a custom song pool.
-The module will generate and export a player yaml to provide to the host.
+If unspecified, the world will generate using the **Club Fantastic Seasons 1 & 2** packs as your default song pool. You can also create a custom song pool directly inside ITGMania using the built-in Client Module AP Config Tool. The module generates and exports a player YAML containing your custom pool to provide to the multiworld host.
 
 ---
 
 ## 1. Client Installation
 
-1. Clone or download the [ITGMania Archipelago Client Module](https://github.com/bwaggone/ITGMania-Archipelago-Module).
-2. Copy `archipelago.lua` and the `Archipelago` folder into your ITGMania theme directory under:
-   `ITGMania/Themes/[THEME_NAME]/Modules/`
+### Prerequisites
+* [ITGMania](https://www.itgmania.com/) (1.3.0+)
+* [Simply Love](https://github.com/itgmania/simply-love-itgmania) theme, or derivative
+
+### Steps
+1. Copy `archipelago.lua` and the `Archipelago` folder from the `module/` directory into your Simply Love theme modules directory:
+   `ITGMania/Themes/Simply Love/Modules/`
    *(Optimized for standard **Simply Love**. UI elements may require styling adjustments on theme forks like Zmod, ArrowCloud, or DigitalDance).*
-3. Copy `module/archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\Archipelago\archipelago.ini` on Windows), or start ITGMania once to generate it automatically, then configure your connection credentials:
+2. Whitelist your Archipelago server host in your ITGMania preferences. Open `preferences.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\preferences.ini` on Windows) and append your server host to the `HttpAllowHosts` entry:
+   ```ini
+   HttpAllowHosts=localhost,archipelago.gg
+   ```
+3. Copy `module/archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\Archipelago\archipelago.ini` on Windows), or start ITGMania once with the module installed to generate it automatically, then configure your connection credentials:
    ```ini
    [Archipelago]
    Host = ws://localhost:38281        # Multiworld server host and port (use wss:// for public servers like archipelago.gg)
    Slot = ITGManiaPlayer              # Your slot name (must match your YAML player name)
-   Password =                         # Password if required
+   Password =                         # Room password (if required)
    ```
-
-*Note*, the world does not need to be generated yet, and you will need to start ITGMania with the module loaded to generate your yaml.
 
 ---
 
 ## 2. Multiworld Generation & Seed Setup
 
-### Step A: Install the Module
-1. Install the module as described above.
-
-### Step B: Configure and Generate Your YAML in ITGMania
+### Step A: Configure and Generate Your YAML in ITGMania
 1. Start ITGMania and go to the song selection screen (`ScreenSelectMusic`).
-2. Open the Sort Menu (typically by pressing **`Left` and `Right`** together).
+2. Open the Sort Menu (press **`Left` + `Right`** simultaneously).
 3. Select **`AP Config Tool`** from the options.
 4. Adjust your game settings:
    * **Player Name**: Set this to match your slot name in the multiworld.
@@ -64,13 +58,13 @@ The module will generate and export a player yaml to provide to the host.
 6. Select **`--- GENERATE YAML ---`**. This creates your configuration file under:
    `Save/Archipelago/YAMLS/[PlayerName].yaml`
 
-### Step C: Generate the Multiworld Seed
+### Step B: Generate the Multiworld Seed
 1. Place the generated `[PlayerName].yaml` file into your Archipelago generator `Players/` folder.
 2. If playing with custom song pools, the Archipelago generator will scan all player YAMLs at generation time and build the master song database union automatically. If a player does not select a custom song pool, the generator defaults to the **Club Fantastic Seasons 1 & 2** pools.
 3. Run the Archipelago generator to produce your multiworld seed.
 
-### Step D: Running the World
-1. If your generated PlayerName matches the value in the ini, when the host starts the world it should connect automatically!
+### Step C: Running the World
+1. When the host starts the room and ITGMania is running with matching credentials in `Save/Archipelago/archipelago.ini`, the module will connect automatically.
 
 ---
 
@@ -78,7 +72,7 @@ The module will generate and export a player yaml to provide to the host.
 
 * **Game Mode**:
   * `clear_count`: Clear a specified number of songs to win the game.
-  * `boss_key`: Unlocks and clear a specific Goal Song after collecting a target number of Boss Keys.
+  * `boss_key`: Unlock and clear a specific Goal Song after collecting a target number of Boss Keys.
 * **Win Count** (Clear Count Mode only): The number of song charts passed/cleared required to win the game.
 * **Goal Song** (Boss Key Mode only): The exact song title (from your song pool) that is your Goal Song. Leave empty to select one randomly from your pool.
 * **Boss Key Name / Count / Required** (Boss Key Mode only): Customize the flavor name of the boss key items, the total number placed in the multiworld, and how many are needed to unlock the Goal Song.
@@ -104,8 +98,8 @@ The module will generate and export a player yaml to provide to the host.
 
 ## 4. In-Game Features & Controls
 
-### Dynamic Playlist & Song Wheel Updates
-When a new song chart is unlocked, the client writes the chart to a local playlist file (`.../Themes/[THEME_NAME]/Other/Playlists/Archipelago - <SeedName>.txt`) and automatically triggers the ITGMania C++ engine to reload. If you are sorted by **Preferred** on the music wheel, new unlocks appear instantly.
+### Dynamic Playlist & Song Unlocks
+When a new song chart is unlocked, the client writes the chart to a local playlist file (`.../Themes/[THEME_NAME]/Other/Playlists/Archipelago - <SeedName>.txt`) and automatically triggers the ITGMania C++ engine to reload the playlist so newly unlocked songs appear live.
 
 ### In-Game Status Overlay (`F10`)
 Press **`F10`** on the music wheel to open the scrollable AP Status overlay:
@@ -123,9 +117,9 @@ If you have unused **Score Booster** items sent by other players, a custom inter
 
 ## FAQ
 
-*I generated the yaml and started the world, but it's not connecting!*
+*I generated the YAML and started the game, but it's not connecting!*
 
-Ensure that your `archipelago.ini` file is correct, especially your SlotName. It should match the name of the Yaml file provided to the host.
+Ensure that your `Save/Archipelago/archipelago.ini` file is configured with the correct `Host` and `Slot` name (matching the `PlayerName` in your generated YAML), and that the server host is listed in `HttpAllowHosts` in your `preferences.ini`.
 
 *Where are the files generated for players running the game?*
 
