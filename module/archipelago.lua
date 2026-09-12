@@ -137,7 +137,7 @@ if not THEME then THEME = {
 end
 
 local function LoadIniConfig()
-	local path = THEME:GetCurrentThemeDirectory() .. "Modules/archipelago.ini"
+	local path = "/Save/Archipelago/archipelago.ini"
 	local file = RageFileUtil.CreateRageFile()
 	local content = nil
 	if file:Open(path, 1) then -- Mode 1 = Read
@@ -146,11 +146,12 @@ local function LoadIniConfig()
 	end
 	
 	if not content then
-		-- File doesn't exist, write default ini settings
+		-- File doesn't exist, write default ini settings to Save/Archipelago/archipelago.ini
 		if file:Open(path, 2) then -- Mode 2 = Write
 			local defaultContent = [[
 [Archipelago]
-# The hostname and port of the Archipelago server (e.g. ws://localhost:38281 or ws://archipelago.gg:38281)
+# The hostname and port of the Archipelago server (e.g. ws://localhost:38281 or wss://archipelago.gg:38281)
+# Note: Use ws:// for locally hosted games (such as localhost) and wss:// for public servers (such as archipelago.gg).
 Host = ws://localhost:38281
 
 # The slot/player name configured in the multiworld
@@ -161,7 +162,7 @@ Password =
 ]]
 			file:Write(defaultContent)
 			file:Close()
-			AP.Trace("Created default archipelago.ini configuration file.")
+			AP.Trace("Created default archipelago.ini configuration file under Save/Archipelago/.")
 		end
 		file:destroy()
 		return

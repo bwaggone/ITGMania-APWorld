@@ -7,7 +7,7 @@ AP.SaveCacheToDisk = function()
 	if not AP.seedName or AP.seedName == "Unknown" or not AP.slotInfo or not AP.datapackage then
 		return
 	end
-	local dir = THEME:GetCurrentThemeDirectory() .. "Modules/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
+	local dir = "/Save/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
 	for slotId, slot_data in pairs(AP.slotInfo) do
 		local playerName = AP.playerNames[slotId] or ("Player_" .. tostring(slotId))
 		-- Filter out invalid folder/file name characters
@@ -40,7 +40,7 @@ end
 
 AP.LoadCacheFromDisk = function()
 	if not AP.seedName or AP.seedName == "Unknown" then return end
-	local dir = THEME:GetCurrentThemeDirectory() .. "Modules/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
+	local dir = "/Save/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
 	
 	if not AP.playerNames then AP.playerNames = {} end
 	if not AP.slotInfo then AP.slotInfo = {} end
@@ -106,21 +106,24 @@ AP.LoadBonusUsage = function()
 	AP.bonusUsage = {}
 	if AP.seedName == "Unknown" or not AP.SLOT then return end
 	
-	local dir = THEME:GetCurrentThemeDirectory() .. "Modules/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
-	local path = dir .. "Archipelago_Bonus_" .. AP.seedName .. "_" .. AP.SLOT .. ".txt"
+	local dir = "/Save/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
+	local filename = "Archipelago_Bonus_" .. AP.seedName .. "_" .. AP.SLOT .. ".txt"
+	local path = dir .. filename
 	
 	local file = RageFileUtil.CreateRageFile()
-	if file:Open(path, 1) then -- Mode 1 = Read
+	if file:Open(path, 1) then
 		local content = file:Read()
 		file:Close()
 		file:destroy()
 		
 		if content then
 			for line in content:gmatch("[^\r\n]+") do
-			-- Format: song_name:score_type=count
-			local name, score_type, count_str = line:match("^([^:]+):([^=]+)=(%d+)$")
-				if not AP.bonusUsage[name] then AP.bonusUsage[name] = {money=0, ex=0, hex=0} end
-				AP.bonusUsage[name][score_type] = tonumber(count_str)
+				-- Format: song_name:score_type=count
+				local name, score_type, count_str = line:match("^([^:]+):([^=]+)=(%d+)$")
+				if name and score_type and count_str then
+					if not AP.bonusUsage[name] then AP.bonusUsage[name] = {money=0, ex=0, hex=0} end
+					AP.bonusUsage[name][score_type] = tonumber(count_str)
+				end
 			end
 		end
 	else
@@ -130,7 +133,7 @@ end
 
 AP.SaveBonusUsage = function()
 	if AP.seedName == "Unknown" or not AP.SLOT then return end
-	local dir = THEME:GetCurrentThemeDirectory() .. "Modules/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
+	local dir = "/Save/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
 	local path = dir .. "Archipelago_Bonus_" .. AP.seedName .. "_" .. AP.SLOT .. ".txt"
 	local file = RageFileUtil.CreateRageFile()
 	if file:Open(path, 2) then -- Mode 2 = Write
@@ -160,7 +163,7 @@ end
 
 AP.SaveLastSeed = function(seedName)
 	if not seedName or seedName == "Unknown" then return end
-	local path = THEME:GetCurrentThemeDirectory() .. "Modules/Archipelago/last_seed.txt"
+	local path = "/Save/Archipelago/last_seed.txt"
 	local file = RageFileUtil.CreateRageFile()
 	if file:Open(path, 2) then -- Mode 2 = Write
 		file:Write(seedName)
@@ -172,10 +175,10 @@ AP.SaveLastSeed = function(seedName)
 end
 
 AP.LoadLastSeed = function()
-	local path = THEME:GetCurrentThemeDirectory() .. "Modules/Archipelago/last_seed.txt"
+	local path = "/Save/Archipelago/last_seed.txt"
 	local file = RageFileUtil.CreateRageFile()
 	local seedName = nil
-	if file:Open(path, 1) then -- Mode 1 = Read
+	if file:Open(path, 1) then
 		local content = file:Read()
 		file:Close()
 		file:destroy()

@@ -13,7 +13,7 @@ For details about the world setup and options, see the [Archipelago ITGMania Wor
 *   **YAML Config Tool Built-in**:
     *   Open the overlay from Simply Love's sort menu to configure slot options and select custom song pools.
     *   Generates player YAML configurations containing selected `custom_song_pool` paths.
-    *   Writes YAML files to `.../Themes/[THEME_NAME]/Modules/Archipelago/YAMLS/[Player_Name].yaml`.
+    *   Writes YAML files to `Save/Archipelago/YAMLS/[Player_Name].yaml`.
 *   **Persistent WebSocket Connection**: A background client connection that runs continuously in ITGMania. It handles handshakes, syncs item unlocks, and automatically submits completed location checks.
 *   **Dynamic Playlist & Live Song Wheel Updates**:
     *   Unlocked song charts are written to a local playlist file: `.../Themes/[THEME_NAME]/Other/Playlists/Archipelago - <SeedName>.txt`.
@@ -28,7 +28,7 @@ For details about the world setup and options, see the [Archipelago ITGMania Wor
     *   Allows you to distribute boosters to your **Money**, **EX**, or **High EX** performance.
     *   Displays a live preview of what check thresholds will unlock (e.g. *Clear Check 1*, *85% Score Check*) before you commit and send checks.
 *   **Offline Seed Caching**:
-    *   Caches DataPackage definitions (player names, item IDs, location definitions) to `.../Themes/[THEME_NAME]/Modules/Archipelago/SAVE_AP_<SeedName>/`.
+    *   Caches DataPackage definitions (player names, item IDs, location definitions) to `Save/Archipelago/SAVE_AP_<SeedName>/`.
     *   Does this for all connected players to show what players are unlocking songs for you, and what items you're unlocking for them.
 *   **Real-Time Notifications**:
     *   Dynamic status messages slide into view in the screen footer when:
@@ -44,12 +44,12 @@ For details about the world setup and options, see the [Archipelago ITGMania Wor
 ## ⚙️ Installation & Setup
 
 ### 1. Client Installation
-1. Copy `archipelago.lua`, `archipelago.ini`, and the `Archipelago` folder into your ITGMania theme directory under:
+1. Copy `archipelago.lua` and the `Archipelago` folder into your ITGMania theme directory under:
    `.../Themes/[THEME_NAME]/Modules/`
-2. Open `archipelago.ini` in a text editor and configure your connection credentials:
+2. Copy `archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\Archipelago\archipelago.ini` on Windows), or launch the game once to auto-generate it. Open it in a text editor and configure your connection credentials:
    ```ini
    [Archipelago]
-   Host = wss://localhost:38281
+   Host = ws://localhost:38281        # Multiworld server host and port (use wss:// for public servers like archipelago.gg)
    Slot = ITGManiaPlayer
    Password =
    ```
@@ -67,7 +67,7 @@ For details about the world setup and options, see the [Archipelago ITGMania Wor
 1. In ITGMania, enter the song selection wheel (`ScreenSelectMusic`).
 2. Open the Sort Menu (press **`Left` and `Right`** together) and select **`AP Config Tool`**.
 3. Configure your desired player settings and select **`Configure Song Pool...`** to choose which song packs or individual songs you want in your pool.
-4. Select **`--- GENERATE YAML ---`** to write your config YAML to the theme's `Modules/Archipelago/YAMLS/` directory.
+4. Select **`--- GENERATE YAML ---`** to write your config YAML to `Save/Archipelago/YAMLS/`.
 5. Place this YAML in the Archipelago `Players/` folder. The generator automatically uses the `custom_song_pool` list defined inside your YAML. If no custom songs are chosen, it defaults to the **Club Fantastic Seasons 1 & 2** pools that come by default with ITGMania.
 6. Generate your multiworld seed.
 

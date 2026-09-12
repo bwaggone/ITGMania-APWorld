@@ -13,7 +13,7 @@ ITGMania-APWorld/
 ├── module/                  # ITGMania Client Module (Lua)
 │   ├── Archipelago/         # Sub-modules (network, UI, evaluator, playlist, traps, etc.)
 │   ├── archipelago.lua      # Theme module entry point
-│   ├── archipelago.ini      # Client connection configuration
+│   ├── archipelago.ini.example # Example client connection configuration
 │   └── README.md            # Module-specific documentation
 └── world/                   # Archipelago World Package (Python / .apworld)
     ├── docs/                # Setup & options documentation
@@ -41,7 +41,7 @@ ITGMania-APWorld/
 * **In-Game YAML Config Tool**:
   * Direct in-game configuration tool accessible from Simply Love's music wheel sort menu.
   * Interactive library scanner: select custom packs or songs to build a `custom_song_pool`.
-  * Exports formatted Archipelago player YAML directly to disk (`.../Modules/Archipelago/YAMLS/`).
+  * Exports formatted Archipelago player YAML directly to disk (`Save/Archipelago/YAMLS/`).
 * **Live Music Wheel & Playlist Sync**:
   * Unlocked charts are automatically appended to a local playlist (`Archipelago - <SeedName>.txt`).
   * Triggers the ITGMania C++ engine to reload the playlist live. When sorted by **Preferred** on `ScreenSelectMusic`, newly received charts appear instantly.
@@ -64,15 +64,15 @@ ITGMania-APWorld/
 
 ### 1. Client Installation (ITGMania)
 
-1. Copy the contents of the `module/` directory (`archipelago.lua`, `archipelago.ini`, and the `Archipelago/` folder) into your Simply Love theme modules folder:
+1. Copy the contents of the `module/` directory (`archipelago.lua` and the `Archipelago/` folder) into your Simply Love theme modules folder:
    ```
    ITGMania/Themes/Simply Love/Modules/
    ```
    *(Note: Designed for **Simply Love**. UI layout may require adjustments on theme forks like Zmod, ArrowCloud, or DigitalDance).*
-2. Open `archipelago.ini` in a text editor to configure connection settings:
+2. Copy `module/archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\Archipelago\archipelago.ini` on Windows), or start the game once to generate it automatically, then configure your connection credentials:
    ```ini
    [Archipelago]
-   Host = wss://archipelago.gg:38281   # Multiworld server host and port
+   Host = ws://localhost:38281        # Multiworld server host and port (use wss:// for public servers like archipelago.gg)
    Slot = ITGManiaPlayer              # Player slot name (must match your YAML player name)
    Password =                         # Room password (if required)
    ```
@@ -103,7 +103,7 @@ To install the world package into your Archipelago installation:
 5. Select **`Configure Song Pool...`** to pick specific song packs or songs from your installed library.
 6. Select **`--- GENERATE YAML ---`**. The file will be written to:
    ```
-   .../Themes/[THEME_NAME]/Modules/Archipelago/YAMLS/[PlayerName].yaml
+   Save/Archipelago/YAMLS/[PlayerName].yaml
    ```
 
 ### Step 2: Generate Multiworld Seed

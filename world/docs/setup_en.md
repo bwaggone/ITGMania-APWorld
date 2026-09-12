@@ -27,13 +27,13 @@ The module will generate and export a player yaml to provide to the host.
 ## 1. Client Installation
 
 1. Clone or download the [ITGMania Archipelago Client Module](https://github.com/bwaggone/ITGMania-Archipelago-Module).
-2. Copy `archipelago.lua`, `archipelago.ini`, and the `Archipelago` folder into your ITGMania theme directory under:
+2. Copy `archipelago.lua` and the `Archipelago` folder into your ITGMania theme directory under:
    `ITGMania/Themes/[THEME_NAME]/Modules/`
    *(Optimized for standard **Simply Love**. UI elements may require styling adjustments on theme forks like Zmod, ArrowCloud, or DigitalDance).*
-3. Open `archipelago.ini` in a text editor and configure your connection credentials:
+3. Copy `module/archipelago.ini.example` to `Save/Archipelago/archipelago.ini` in your user save directory (e.g. `%APPDATA%\ITGmania\Save\Archipelago\archipelago.ini` on Windows), or start ITGMania once to generate it automatically, then configure your connection credentials:
    ```ini
    [Archipelago]
-   Host = ws://archipelago.gg:38281   # The multiworld server host and port
+   Host = ws://localhost:38281        # Multiworld server host and port (use wss:// for public servers like archipelago.gg)
    Slot = ITGManiaPlayer              # Your slot name (must match your YAML player name)
    Password =                         # Password if required
    ```
@@ -62,7 +62,7 @@ The module will generate and export a player yaml to provide to the host.
    * Press **`Start`** to expand or collapse packs.
    * Press **`MenuLeft`/`MenuRight`** to check/uncheck songs or entire packs.
 6. Select **`--- GENERATE YAML ---`**. This creates your configuration file under:
-   `ITGMania/Themes/[THEME_NAME]/Modules/Archipelago/YAMLS/[PlayerName].yaml`
+   `Save/Archipelago/YAMLS/[PlayerName].yaml`
 
 ### Step C: Generate the Multiworld Seed
 1. Place the generated `[PlayerName].yaml` file into your Archipelago generator `Players/` folder.
@@ -130,5 +130,5 @@ Ensure that your `archipelago.ini` file is correct, especially your SlotName. It
 *Where are the files generated for players running the game?*
 
 * Playlist: `.../Themes/[THEME_NAME]/Other/Playlists/Archipelago - <SeedName>.txt`
-* Cache files: `.../Themes/[THEME_NAME]/Modules/Archipelago/AP_[SEED]/...`
-* YAMLs: ``.../Themes/[THEME_NAME]/Modules/Archipelago/YAMLS/...`
+* Cache files: `Save/Archipelago/SAVE_AP_[SEED]/...`
+* YAMLs: `Save/Archipelago/YAMLS/...`
