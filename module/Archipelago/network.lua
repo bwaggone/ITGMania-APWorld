@@ -2,6 +2,51 @@
 -- handles connection events (open, close, error), and parses and dispatches 
 -- incoming JSON packet payloads.
 
+-- trap fix code
+-- Directory for persisted per-seed sync state: the index of the last item this client
+-- has fully processed (shown its notification, queued it if it was a trap). This is what
+-- lets a reconnect - whether from a brief drop, a failed initial connection, or just the
+-- game being closed overnight - correctly treat only genuinely-new items as new, instead
+-- of either replaying the whole item history or (the old bug) silently dropping anything
+-- that happened to land in the very first ReceivedItems packet after launch.
+
+local SYNC_DIR = "/Save/Archipelago/sync/"
+
+local function sanitizeForFilename(s)
+	return tostring(s):gsub("[^%w%-_]", "_")
+end
+
+local function syncFilePath()
+	local seed = sanitizeForFilename(AP.seedName or "unknown_seed")
+	local slot = sanitizeForFilename(AP.connectedSlotName or AP.SLOT or "unknown_slot")
+	local host = sanitizeForFilename(AP.HOST or "unknown_host")
+	return SYNC_DIR .. seed .. "_" .. slot .. "_" .. host .. ".txt"
+end
+
+local function loadLastProcessedIndex()
+	local file = RageFileUtil.CreateRageFile()
+	local last = 0
+	if file:Open(syncFilePath(), 1) then -- READ
+		last = tonumber(file:Read()) or 0
+		file:Close()
+	end
+	file:destroy()
+	return last
+end
+
+local function saveLastProcessedIndex(index)
+	local file = RageFileUtil.CreateRageFile()
+	if file:Open(syncFilePath(), 2) then -- WRITE
+		file:Write(tostring(index))
+		file:Close()
+	else
+		AP.Trace("[AP-Module] WARNING: failed to persist item sync index to " .. syncFilePath())
+	end
+	file:destroy()
+end
+
+-- trap fix code end
+
 local AP = ...
 
 AP.CreateAPHandler = function() 
@@ -207,6 +252,12 @@ AP.HandleMessage = function(self, msg)
 
 				AP.connectedSlotName = AP.GetPlayerName(packet.slot)
 
+				-- Force a fresh load of the persisted item-sync watermark, keyed to
+				-- whichever seed/slot we just connected as - prevents a mid-session
+				-- switch to a different seed/slot from carrying over the previous
+				-- game's index (see loadLastProcessedIndex/saveLastProcessedIndex above).
+				AP.lastProcessedItemIndex = nil
+
 				-- Save updated cache to disk
 				AP.SaveCacheToDisk()
 
@@ -348,16 +399,21 @@ AP.HandleMessage = function(self, msg)
 							break
 						end
 					end
-					if isDeathLink then
-						local source = (packet.data and packet.data.source) or "someone"
-						if source ~= AP.SLOT then
-							local topScreen = SCREENMAN:GetTopScreen()
-							if topScreen and topScreen:GetName() == "ScreenGameplay" then
-								AP.deathlinkArmed = true
-								SCREENMAN:SystemMessage("DeathLink received from " .. source .. " - failing song!")
-								AP.Trace("Received DeathLink from " .. source)
-							end
-						end
+					 if isDeathLink then
+						 local source = (packet.data and packet.data.source) or "someone"
+						 if source ~= AP.SLOT then
+							 local topScreen = SCREENMAN:GetTopScreen()
+							 local screenName = topScreen and topScreen:GetName() or "nil"
+							 AP.Trace("DeathLink Bounced packet received from " .. source .. " (current screen: " .. screenName .. ")")
+							 if screenName == "ScreenGameplay" then
+								 AP.deathlinkArmed = true
+								 SCREENMAN:SystemMessage("DeathLink received from " .. source .. " - failing song!")
+							 else
+								 AP.Trace("DeathLink ignored - not on ScreenGameplay.")
+							 end
+						 else
+							 AP.Trace("DeathLink Bounced packet received from self - ignoring.")
+						 end
 					end
 				end
 			elseif packet_cmd == "PrintJSON" then
@@ -379,37 +435,55 @@ AP.HandleMessage = function(self, msg)
 						})
 					end
 				end
-			elseif packet_cmd == "ReceivedItems" then
-				local item_count = packet.items and #packet.items or 0
-				local base_idx = packet["index"] or 0
-				AP.Trace("Received " .. tostring(item_count) .. " items from server (index " .. tostring(base_idx) .. ")")
-				if packet.items then
-					local isNewItem = self.connected and AP.initialSyncComplete
-					if base_idx == 0 then
-						AP.AP_AllReceivedItems = {}
-					end
-					for i, item in ipairs(packet.items) do
-						AP.AP_AllReceivedItems[base_idx + i] = item
-						local item_id = item.item
-						local name = AP.itemNames[item_id] or "Unknown Item"
-						if name:find("/") then
-							AP.Trace("Received Song: " .. name .. " (ID=" .. tostring(item_id) .. ", Location=" .. tostring(item.location) .. ", Player=" .. tostring(item.player) .. ")")
-						else
-							AP.Trace("Received Mod/Filler (Non-Song): " .. name .. " (ID=" .. tostring(item_id) .. ", Location=" .. tostring(item.location) .. ", Player=" .. tostring(item.player) .. ")")
-						end
-						if isNewItem then
-							local sender = AP.GetPlayerName(item.player)
-							AP.QueueNotification({ type = "Received", name = name, sender = sender })
+			
+elseif packet_cmd == "ReceivedItems" then
+    local item_count = packet.items and #packet.items or 0
+    local base_idx = packet["index"] or 0
+    AP.Trace("Received " .. tostring(item_count) .. " items from server (index " .. tostring(base_idx) .. ")")
+    if packet.items then
+        if base_idx == 0 then
+            AP.AP_AllReceivedItems = {}
+        end
 
-							-- Queue trap if received during game session
-							if name:sub(1, 7) == "Trap - " then
-								table.insert(AP.armedTrapQueue, name)
-								SCREENMAN:SystemMessage("Trap incoming: " .. name .. " (queued - applies to your next song)")
-							end
-						end
-					end
-					AP.initialSyncComplete = true
-					AP.UpdatePlaylist()
+        -- Lazily load the persisted watermark the first time we see items after connecting.
+        if AP.lastProcessedItemIndex == nil then
+            AP.lastProcessedItemIndex = loadLastProcessedIndex()
+        end
+        local newWatermark = AP.lastProcessedItemIndex
+
+        for i, item in ipairs(packet.items) do
+            local runningCount = base_idx + i  -- matches AP.AP_AllReceivedItems's own 1-based indexing
+            AP.AP_AllReceivedItems[runningCount] = item
+            local item_id = item.item
+            local name = AP.itemNames[item_id] or "Unknown Item"
+            if name:find("/") then
+                AP.Trace("Received Song: " .. name .. " (ID=" .. tostring(item_id) .. ", Location=" .. tostring(item.location) .. ", Player=" .. tostring(item.player) .. ")")
+            else
+                AP.Trace("Received Mod/Filler (Non-Song): " .. name .. " (ID=" .. tostring(item_id) .. ", Location=" .. tostring(item.location) .. ", Player=" .. tostring(item.player) .. ")")
+            end
+
+            -- "New" now means "past what we'd persisted as of our last session", not just
+            -- "not in the very first packet this launch" - so an item sent while offline
+            -- still gets its notification and gets queued as a trap exactly once.
+            if runningCount > AP.lastProcessedItemIndex then
+                local sender = AP.GetPlayerName(item.player)
+                AP.QueueNotification({ type = "Received", name = name, sender = sender })
+
+                if name:sub(1, 7) == "Trap - " then
+                    table.insert(AP.armedTrapQueue, name)
+                    SCREENMAN:SystemMessage("Trap incoming: " .. name .. " (queued - applies to your next song)")
+                end
+                newWatermark = runningCount
+            end
+        end
+
+        if newWatermark ~= AP.lastProcessedItemIndex then
+            AP.lastProcessedItemIndex = newWatermark
+            saveLastProcessedIndex(newWatermark)  -- one write per batch, not per item
+        end
+
+        AP.initialSyncComplete = true
+        AP.UpdatePlaylist()
 					
 					if AP.connectedSlotName and AP.lastConnectedState ~= true then
 						AP.QueueNotification({ type = "Connected", name = AP.connectedSlotName })
