@@ -969,6 +969,12 @@ AP.MakeEvaluationOverlayActor = function()
 	end
 
 	toggleOverlay = function(self)
+		if not overlay_visible then
+			if not AP.LastEvaluation or not AP.LastEvaluation.chart_name or not AP.IsChartInSongPool(AP.LastEvaluation.chart_name) then
+				return
+			end
+		end
+
 		overlay_visible = not overlay_visible
 		proposed_items = { money = 0, ex = 0, hex = 0 }
 		
@@ -995,6 +1001,9 @@ AP.MakeEvaluationOverlayActor = function()
 
 	local function F10_listener(event)
 		if overlay_visible then return false end
+		if not AP.LastEvaluation or not AP.LastEvaluation.chart_name or not AP.IsChartInSongPool(AP.LastEvaluation.chart_name) then
+			return false
+		end
 		if event.type == "InputEventType_FirstPress" and event.DeviceInput and event.DeviceInput.button == "DeviceButton_F10" then
 			if evaluation_overlay_actor then
 				evaluation_overlay_actor:playcommand("ToggleOverlay")
@@ -1022,6 +1031,7 @@ AP.MakeEvaluationOverlayActor = function()
 				overlay_visible = false
 				AP.pendingSLEventOverlay = false
 				AP.FinalizeEvaluationAndSendChecks()
+				AP.LastEvaluation = nil
 			end
 		end,
 		ModuleCommand = function(self)
@@ -1040,9 +1050,9 @@ AP.MakeEvaluationOverlayActor = function()
 			AP.pendingSLEventOverlay = false
 			MESSAGEMAN:Broadcast("APBonusRefresh")
 			
-			-- Auto-popup if they have available items, otherwise finalize immediately
+			-- Auto-popup if they have available items and song is in AP pool, otherwise finalize immediately
 			local available = AP.GetAvailableBonusItems()
-			if available > 0 and AP.LastEvaluation and AP.LastEvaluation.chart_name then
+			if available > 0 and AP.LastEvaluation and AP.LastEvaluation.chart_name and AP.IsChartInSongPool(AP.LastEvaluation.chart_name) then
 				self:queuecommand("AutoPopup")
 			else
 				AP.FinalizeEvaluationAndSendChecks()

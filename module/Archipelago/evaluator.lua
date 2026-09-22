@@ -113,6 +113,11 @@ local CalculateHardExScore = function(player, ex_counts, use_actual_w0_weight)
 end
 
 AP.EvaluateCompletedSong = function()
+	AP.LastEvaluation = nil
+
+	local apHandler = AP.GetAPHandlerInstance and AP.GetAPHandlerInstance()
+	if not apHandler or not apHandler.connected then return end
+
 	local song = GAMESTATE:GetCurrentSong()
 	if not song then return end
 	
@@ -130,6 +135,11 @@ AP.EvaluateCompletedSong = function()
 	local chart_name = AP.folderToChartName[folderName]
 	if not chart_name then
 		-- Not an AP song, ignore silently
+		return
+	end
+
+	-- Check if the song is part of the player's active song pool in this seed
+	if not AP.IsChartInSongPool(chart_name) then
 		return
 	end
 

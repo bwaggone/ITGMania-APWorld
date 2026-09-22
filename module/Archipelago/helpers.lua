@@ -165,6 +165,42 @@ AP.GetReceivedItemCount = function(itemName)
 	return count
 end
 
+AP.IsChartInSongPool = function(chart_name)
+	if not chart_name then return false end
+	if not AP.activeLocationIds then return false end
+
+	-- In Boss Key mode, the Goal Song is in the song pool
+	if AP.slotOptions and AP.slotOptions.game_mode == 1 and AP.slotOptions.goal_song == chart_name then
+		return true
+	end
+
+	-- Check if any location check for this song belongs to activeLocationIds
+	if AP.locationIds then
+		local base_loc_id = AP.locationIds[chart_name .. "-0"]
+		if base_loc_id and AP.activeLocationIds[base_loc_id] then
+			return true
+		end
+	end
+
+	return false
+end
+
+AP.IsSongInSongPool = function(song)
+	if not song then return false end
+	local songDir = song:GetSongDir()
+	local parts = {}
+	for part in songDir:gmatch("[^/]+") do
+		table.insert(parts, part)
+	end
+	local folderName = parts[#parts]
+	if not folderName then return false end
+
+	local chart_name = AP.folderToChartName[folderName]
+	if not chart_name then return false end
+
+	return AP.IsChartInSongPool(chart_name)
+end
+
 AP.IsSongLocked = function(song)
 	if not song then return false end
 	local songDir = song:GetSongDir()
@@ -178,6 +214,10 @@ AP.IsSongLocked = function(song)
 	local chart_name = AP.folderToChartName[folderName]
 	if not chart_name then
 		return false -- Not part of the AP seed, not locked
+	end
+
+	if not AP.IsChartInSongPool(chart_name) then
+		return false -- Not part of player's active song pool
 	end
 
 	-- If it's Boss Key mode and this is the Goal Song, check boss key count
