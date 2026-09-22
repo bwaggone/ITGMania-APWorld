@@ -3,102 +3,137 @@
 
 local AP = ...
 
+AP.PopulateLocalLookups = function()
+	local game_data = AP.datapackage and AP.datapackage[AP.GAME_NAME]
+	if not game_data then return end
+
+	local item_to_id = game_data.itemNames
+	local location_to_id = game_data.locationNames
+
+	AP.itemNames = AP.itemNames or {}
+	local count = 0
+	if item_to_id then
+		for id_str, name in pairs(item_to_id) do
+			local id = tonumber(id_str) or id_str
+			AP.itemNames[id] = name
+			AP.itemNames[tostring(id)] = name
+			count = count + 1
+		end
+	end
+
+	AP.locationIds = AP.locationIds or {}
+	AP.folderToChartName = AP.folderToChartName or {}
+	local loc_count = 0
+	local cached_folders = 0
+	if location_to_id then
+		for id_str, name in pairs(location_to_id) do
+			local id = tonumber(id_str) or id_str
+			AP.locationIds[name] = id
+			loc_count = loc_count + 1
+
+			if name:match("%-0$") then
+				local base_chart = name:gsub("%-0$", "")
+				local parts = {}
+				for part in base_chart:gmatch("[^/]+") do
+					table.insert(parts, part)
+				end
+				local folderName = nil
+				if #parts >= 2 then
+					folderName = parts[2]
+				elseif #parts == 1 then
+					folderName = parts[1]
+				end
+				if folderName then
+					AP.folderToChartName[folderName] = base_chart
+					cached_folders = cached_folders + 1
+				end
+			end
+		end
+	end
+	AP.Trace("Populated lookups: " .. tostring(count) .. " items, " .. tostring(loc_count) .. " locations, " .. tostring(cached_folders) .. " folder mappings.")
+end
+
 AP.SaveCacheToDisk = function()
-	if not AP.seedName or AP.seedName == "Unknown" or not AP.slotInfo or not AP.datapackage then
+	if not AP.seedName or AP.seedName == "Unknown" then
 		return
 	end
 	local dir = "/Save/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
-	for slotId, slot_data in pairs(AP.slotInfo) do
-		local playerName = AP.playerNames[slotId] or ("Player_" .. tostring(slotId))
-		-- Filter out invalid folder/file name characters
-		playerName = playerName:gsub("[%s%c\\/:%*%?\"<>|]", "_")
-		local gameName = slot_data.game
-		local gameData = AP.datapackage[gameName]
-		
-		if gameData then
-			local playerData = {
-				playerName = playerName,
-				slot = slotId,
-				game = gameName,
-				itemNames = gameData.itemNames or {},
-				locationNames = gameData.locationNames or {}
-			}
-			local jsonStr = JsonEncode(playerData)
-			local path = dir .. playerName .. ".txt"
-			local file = RageFileUtil.CreateRageFile()
-			if file:Open(path, 2) then -- Mode 2 = Write
-				file:Write(jsonStr)
-				file:Close()
-				file:destroy()
-			else
-				file:destroy()
-				AP.Trace("Archipelago error: Could not write cache file to " .. path)
-			end
-		end
+	local path = dir .. "cache.json"
+
+	local cacheData = {
+		seed = AP.seedName,
+		checksums = AP.datapackageChecksums or {},
+		slots = AP.slotInfo or {},
+		playerNames = AP.playerNames or {},
+		datapackage = AP.datapackage or {}
+	}
+
+	local success, jsonStr = pcall(JsonEncode, cacheData)
+	if not success or not jsonStr then
+		AP.Trace("Archipelago error: Failed to serialize cache to JSON")
+		return
+	end
+
+	local file = RageFileUtil.CreateRageFile()
+	if file:Open(path, 2) then -- Mode 2 = Write
+		file:Write(jsonStr)
+		file:Close()
+		file:destroy()
+		AP.cacheDirty = false
+		AP.Trace("Saved seed cache to " .. path)
+	else
+		file:destroy()
+		AP.Trace("Archipelago error: Could not write cache file to " .. path)
 	end
 end
 
 AP.LoadCacheFromDisk = function()
 	if not AP.seedName or AP.seedName == "Unknown" then return end
 	local dir = "/Save/Archipelago/SAVE_AP_" .. AP.seedName .. "/"
-	
+	local path = dir .. "cache.json"
+
 	if not AP.playerNames then AP.playerNames = {} end
 	if not AP.slotInfo then AP.slotInfo = {} end
 	if not AP.datapackage then AP.datapackage = {} end
-	
-	local files = FILEMAN:GetDirListing(dir .. "*", false, false)
-	if files and #files > 0 then
-		local loadedCount = 0
-		for _, filename in ipairs(files) do
-			if filename:match("%.txt$") then
-				local path = dir .. filename
-				local file = RageFileUtil.CreateRageFile()
-				if file:Open(path, 1) then -- Mode 1 = Read
-					local content = file:Read()
-					file:Close()
-					file:destroy()
-					
-					if content then
-						local success, data = pcall(JsonDecode, content)
-						if success and data and data.slot and data.game then
-							local slotId = tonumber(data.slot) or data.slot
-							local gameName = data.game
-							local playerName = data.playerName or filename:gsub("%.txt$", "")
-							
-							AP.playerNames[slotId] = playerName
-							AP.slotInfo[slotId] = {
-								name = playerName,
-								game = gameName,
-								type = data.type or 0
-							}
-							
-							if not AP.datapackage[gameName] then
-								AP.datapackage[gameName] = {
-									itemNames = {},
-									locationNames = {}
-								}
-							end
-							
-							if data.itemNames then
-								for id_str, name in pairs(data.itemNames) do
-									AP.datapackage[gameName].itemNames[id_str] = name
-								end
-							end
-							if data.locationNames then
-								for id_str, name in pairs(data.locationNames) do
-									AP.datapackage[gameName].locationNames[id_str] = name
-								end
-							end
-							
-							loadedCount = loadedCount + 1
-						end
+	if not AP.datapackageChecksums then AP.datapackageChecksums = {} end
+
+	local file = RageFileUtil.CreateRageFile()
+	if file:Open(path, 1) then -- Mode 1 = Read
+		local content = file:Read()
+		file:Close()
+		file:destroy()
+
+		if content then
+			local success, data = pcall(JsonDecode, content)
+			if success and data then
+				if data.checksums then
+					for k, v in pairs(data.checksums) do
+						AP.datapackageChecksums[k] = v
 					end
-				else
-					file:destroy()
 				end
+				if data.slots then
+					for slot_id, info in pairs(data.slots) do
+						local id = tonumber(slot_id) or slot_id
+						AP.slotInfo[id] = info
+					end
+				end
+				if data.playerNames then
+					for slot_id, name in pairs(data.playerNames) do
+						local id = tonumber(slot_id) or slot_id
+						AP.playerNames[id] = name
+					end
+				end
+				if data.datapackage then
+					for gameName, pkg in pairs(data.datapackage) do
+						AP.datapackage[gameName] = pkg
+					end
+				end
+				AP.PopulateLocalLookups()
+				AP.Trace("Loaded seed cache from " .. path)
 			end
 		end
-		AP.Trace("Loaded " .. tostring(loadedCount) .. " players from local seed cache.")
+	else
+		file:destroy()
 	end
 end
 

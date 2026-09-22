@@ -92,6 +92,23 @@ AP.CreateAPHandler = function()
 	return AP.apHandler
 end
 
+AP.SendConnectPacket = function(self)
+	AP.Trace("Sending Connect packet...")
+	local connect_packet = {
+		["cmd"] = "Connect",
+		game = AP.GAME_NAME,
+		name = AP.SLOT,
+		uuid = "itgmania-ap-client-uuid",
+		version = { major = 0, minor = 6, build = 8, ["class"] = "Version" },
+		items_handling = 7, -- Receive all items (remote, own, starting)
+		password = AP.PASSWORD,
+		tags = {},
+		slot_data = true
+	}
+	local connect_payload = JsonEncode({ connect_packet })
+	self.socket:Send(connect_payload, false)
+end
+
 AP.HandleMessage = function(self, msg)
 	if msg.type == "WebSocketMessageType_Open" then
 		AP.Trace("WebSocket transport connected. Waiting for RoomInfo...")
@@ -127,13 +144,43 @@ AP.HandleMessage = function(self, msg)
 				AP.hasDefaultedToSortOrderPreferred = false
 				AP.SaveLastSeed(AP.seedName)
 				AP.LoadCacheFromDisk()
-				AP.Trace("Received RoomInfo (Seed: " .. AP.seedName .. "). Requesting DataPackage...")
-				local get_dp_packet = {
-					["cmd"] = "GetDataPackage",
-					games = packet["games"]
-				}
-				local payload = JsonEncode({ get_dp_packet })
-				self.socket:Send(payload, false)
+
+				local serverChecksums = packet["datapackage_checksums"] or {}
+				local missingOrUpdatedGames = {}
+
+				-- Check ITGMania first
+				if not AP.datapackage or not AP.datapackage[AP.GAME_NAME] or (serverChecksums[AP.GAME_NAME] and AP.datapackageChecksums[AP.GAME_NAME] ~= serverChecksums[AP.GAME_NAME]) then
+					table.insert(missingOrUpdatedGames, AP.GAME_NAME)
+				end
+
+				-- Check other games in room
+				if packet["games"] then
+					for _, game_name in ipairs(packet["games"]) do
+						if game_name ~= AP.GAME_NAME then
+							if not AP.datapackage or not AP.datapackage[game_name] or (serverChecksums[game_name] and AP.datapackageChecksums[game_name] ~= serverChecksums[game_name]) then
+								table.insert(missingOrUpdatedGames, game_name)
+							end
+						end
+					end
+				end
+
+				-- Update checksum tracking table
+				for game_name, csum in pairs(serverChecksums) do
+					AP.datapackageChecksums[game_name] = csum
+				end
+
+				if #missingOrUpdatedGames > 0 then
+					AP.Trace("Received RoomInfo (Seed: " .. AP.seedName .. "). Requesting DataPackage for " .. #missingOrUpdatedGames .. " games...")
+					local get_dp_packet = {
+						["cmd"] = "GetDataPackage",
+						games = missingOrUpdatedGames
+					}
+					local payload = JsonEncode({ get_dp_packet })
+					self.socket:Send(payload, false)
+				else
+					AP.Trace("All required DataPackages are cached and up-to-date. Connecting directly...")
+					AP.SendConnectPacket(self)
+				end
 			elseif packet_cmd == "DataPackage" then
 				local games = packet.data and packet.data.games
 				
@@ -156,70 +203,18 @@ AP.HandleMessage = function(self, msg)
 								AP.datapackage[game_name].locationNames[tostring(id)] = name
 							end
 						end
-					end
-				end
-
-				local game_data = games and games[AP.GAME_NAME]
-				local item_to_id = game_data and game_data.item_name_to_id
-				local location_to_id = game_data and game_data.location_name_to_id
-
-				AP.itemNames = {}
-				local count = 0
-				if item_to_id then
-					for name, id in pairs(item_to_id) do
-						AP.itemNames[id] = name
-						AP.itemNames[tostring(id)] = name
-						count = count + 1
-					end
-				end
-
-				AP.locationIds = {}
-				AP.folderToChartName = {}
-				local loc_count = 0
-				local cached_folders = 0
-				if location_to_id then
-					for name, id in pairs(location_to_id) do
-						AP.locationIds[name] = id
-						loc_count = loc_count + 1
-						
-						if name:match("%-0$") then
-							local base_chart = name:gsub("%-0$", "")
-							local parts = {}
-							for part in base_chart:gmatch("[^/]+") do
-								table.insert(parts, part)
-							end
-							local folderName = nil
-							if #parts >= 2 then
-								folderName = parts[2]
-							elseif #parts == 1 then
-								folderName = parts[1]
-							end
-							if folderName then
-								AP.folderToChartName[folderName] = base_chart
-								cached_folders = cached_folders + 1
-							end
+						if game_package.checksum then
+							AP.datapackageChecksums[game_name] = game_package.checksum
 						end
 					end
 				end
-				AP.Trace("Loaded " .. tostring(count) .. " item names, " .. tostring(loc_count) .. " locations, and " .. tostring(cached_folders) .. " folder mappings from DataPackage.")
+
+				AP.PopulateLocalLookups()
 
 				-- Save updated cache to disk
 				AP.SaveCacheToDisk()
 
-				AP.Trace("Sending Connect packet...")
-				local connect_packet = {
-					["cmd"] = "Connect",
-					game = AP.GAME_NAME,
-					name = AP.SLOT,
-					uuid = "itgmania-ap-client-uuid",
-					version = { major = 0, minor = 6, build = 8, ["class"] = "Version" },
-					items_handling = 7, -- Receive all items (remote, own, starting)
-					password = AP.PASSWORD,
-					tags = {},
-					slot_data = true
-				}
-				local connect_payload = JsonEncode({ connect_packet })
-				self.socket:Send(connect_payload, false)
+				AP.SendConnectPacket(self)
 			elseif packet_cmd == "Connected" then
 				self.connected = true
 				AP.initialSyncComplete = false
