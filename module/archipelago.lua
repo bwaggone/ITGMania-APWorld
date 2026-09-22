@@ -38,7 +38,7 @@ AP.slotOptions = {
 
 AP.configState = {
 	player_name = "Player",
-	game_mode = 0, -- 0 = clear_count, 1 = boss_key
+	game_mode = 1, -- 0 = clear_count, 1 = boss_key
 	win_count = 15,
 	goal_song = "",
 	boss_key_name = 0, -- 0 = Boss Key, 1 = Boss Song Fragment, 2 = McGuffin, etc.
@@ -49,9 +49,9 @@ AP.configState = {
 	score_type = 1, -- 0 = money, 1 = ex, 2 = high_ex
 	number_of_charts = 20,
 	number_of_starting_charts = 3,
-	include_85_score_checks = false,
-	include_90_score_checks = false,
-	include_96_score_checks = false,
+	include_85_score_checks = true,
+	include_90_score_checks = true,
+	include_96_score_checks = true,
 	include_98_score_checks = false,
 	include_99_score_checks = false,
 	include_quad_score_checks = false,

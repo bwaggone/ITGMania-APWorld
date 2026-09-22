@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from Options import Choice, OptionGroup, PerGameCommonOptions, Range, Toggle, FreeText, OptionList, DeathLink, DeathLinkMixin
+from Options import Choice, OptionGroup, PerGameCommonOptions, Range, Toggle, DefaultOnToggle, FreeText, OptionList, DeathLink, DeathLinkMixin
 
 # In this file, we define the options the player can pick.
 # The most common types of options are Toggle, Range and Choice.
@@ -85,15 +85,15 @@ class WinCount(Range):
     default = 15
 
 
-class Include85ScoreChecks(Toggle):
+class Include85ScoreChecks(DefaultOnToggle):
     """Include a check for reaching an 85% score on each chart."""
     display_name = "Include 85% Score Checks"
 
-class Include90ScoreChecks(Toggle):
+class Include90ScoreChecks(DefaultOnToggle):
     """Include a check for reaching a 90% score on each chart."""
     display_name = "Include 90% Score Checks"
 
-class Include96ScoreChecks(Toggle):
+class Include96ScoreChecks(DefaultOnToggle):
     """Include a check for reaching a 96% score on each chart."""
     display_name = "Include 96% Score Checks"
 
@@ -145,7 +145,7 @@ class GameMode(Choice):
     display_name = "Game Mode"
     option_clear_count = 0
     option_boss_key = 1
-    default = 0
+    default = 1
 
 
 class GoalSong(FreeText):

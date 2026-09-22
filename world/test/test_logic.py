@@ -3,10 +3,11 @@ from . import ITGManiaTestBase
 
 class TestITGManiaLogic(ITGManiaTestBase):
     options = {
+        "game_mode": 0,
         "number_of_charts": 20,
         "number_of_starting_charts": 3,
         "group_size": 5,
-        "win_count": 10,
+        "win_count": 20,
     }
 
     def test_progressive_and_group_logic(self) -> None:
@@ -57,19 +58,14 @@ class TestITGManiaLogic(ITGManiaTestBase):
         world = self.get_world()
         all_selected_songs = world.starting_songs + world.included_songs
 
-        # Initially we can reach 6 locations (3 starting songs * 2).
-        # win_count is 10, so the game should not be beatable yet.
+        # Initially we can reach 15 locations (3 starting songs * 5 checks).
+        # win_count is 20, so the game should not be beatable yet.
         self.assertBeatable(False)
 
         # Collect one of the non-starting songs in Group 0 (index 3)
         self.collect_by_name(all_selected_songs[3])
-        # Now we can reach 8 locations. Still not beatable.
-        self.assertBeatable(False)
-
-        # Collect the other non-starting song in Group 0 (index 4)
-        self.collect_by_name(all_selected_songs[4])
-        # Now we can reach 10 locations (index 0, 1, 2, 3, 4).
-        # This meets the win_count = 10 requirement, so the game should be beatable!
+        # Now we can reach 20 locations (index 0, 1, 2, 3 * 5 checks).
+        # This meets the win_count = 20 requirement, so the game should be beatable!
         self.assertBeatable(True)
 
     def test_deduplication(self) -> None:
@@ -88,6 +84,8 @@ class TestITGManiaScoreChecks(ITGManiaTestBase):
         "group_size": 1,
         "win_count": 5,
         "include_85_score_checks": True,
+        "include_90_score_checks": False,
+        "include_96_score_checks": False,
         "include_98_score_checks": True,
         "include_quad_score_checks": True,
     }
@@ -154,12 +152,12 @@ class TestITGManiaModItems(ITGManiaTestBase):
 
 
 class TestITGManiaModItemsInvalid(unittest.TestCase):
-    # Since location_count (20) < unlocks_count (5) + mod_count (16) = 21,
+    # Since location_count (18) < unlocks_count (4) + boss_key_count (10) + mod_count (16) = 30,
     # generate_early should raise an OptionError and the generation should fail.
     def test_invalid_mod_items_options(self) -> None:
         import unittest
         from argparse import Namespace
-        from BaseClasses import MultiWorld
+        from BaseClasses import MultiWorld, CollectionState
         from Options import OptionError
         import worlds.AutoWorld as AutoWorld
         from worlds.itgmania import ITGMania
@@ -174,6 +172,9 @@ class TestITGManiaModItemsInvalid(unittest.TestCase):
             "group_size": 1,
             "win_count": 5,
             "enable_mod_items": True,
+            "include_85_score_checks": False,
+            "include_90_score_checks": False,
+            "include_96_score_checks": False,
         }
 
         args = Namespace()
@@ -183,6 +184,7 @@ class TestITGManiaModItemsInvalid(unittest.TestCase):
                 1: option.from_any(invalid_options.get(name, option.default))
             })
         multiworld.set_options(args)
+        multiworld.state = CollectionState(multiworld)
 
         world = multiworld.worlds[1]
 
@@ -276,11 +278,13 @@ class TestITGManiaMultiplePlayers(unittest.TestCase):
         try:
             player_options = {
                 1: {
+                    "game_mode": 0,
                     "number_of_charts": 2,
                     "number_of_starting_charts": 1,
                     "custom_song_pool": player1_pool,
                 },
                 2: {
+                    "game_mode": 0,
                     "number_of_charts": 2,
                     "number_of_starting_charts": 1,
                     "custom_song_pool": player2_pool,
@@ -367,5 +371,23 @@ class TestITGManiaBossKeyMode(ITGManiaTestBase):
         # Collect 3rd boss key
         self.collect(boss_keys[2:3])
         self.assertBeatable(True)
+
+
+class TestITGManiaDefaultOptions(ITGManiaTestBase):
+    options = {}
+
+    def test_default_options_generation(self) -> None:
+        world = self.get_world()
+        self.assertEqual(world.options.game_mode.value, 1)
+        self.assertTrue(world.options.include_85_score_checks.value)
+        self.assertTrue(world.options.include_90_score_checks.value)
+        self.assertTrue(world.options.include_96_score_checks.value)
+        self.assertTrue(hasattr(world, "goal_song"))
+        self.assertBeatable(False)
+        required_keys = min(world.options.boss_keys_required.value, world.options.boss_key_count.value)
+        boss_keys = self.get_items_by_name("Boss Key")
+        self.collect(boss_keys[:required_keys])
+        self.assertBeatable(True)
+
 
 
