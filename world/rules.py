@@ -53,11 +53,11 @@ def set_all_rules(world: ITGMania) -> None:
         bosskeys_required = min(world.options.boss_keys_required.value, world.options.boss_key_count.value)
         world.multiworld.completion_condition[player] = lambda state: state.has(bosskey_name, player, bosskeys_required)
     else:
-        # Completion condition: must be able to reach at least `win_count` locations (charts) in total.
-        def make_victory_rule(p: int, w: int, songs: list[str], suffixes: list[str]):
+        # Completion condition: must be able to reach at least `win_count` unique charts in total.
+        def make_victory_rule(p: int, w: int, songs: list[str]):
             return lambda state: sum(
-                sum(1 if state.can_reach(f"{song}{suffix}", "Location", p) else 0 for suffix in suffixes)
+                1 if state.can_reach(f"{song}-0", "Location", p) else 0
                 for song in songs
             ) >= w
 
-        world.multiworld.completion_condition[player] = make_victory_rule(player, win_count, all_selected_songs, active_suffixes)
+        world.multiworld.completion_condition[player] = make_victory_rule(player, win_count, all_selected_songs)
