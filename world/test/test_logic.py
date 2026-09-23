@@ -58,14 +58,28 @@ class TestITGManiaLogic(ITGManiaTestBase):
         world = self.get_world()
         all_selected_songs = world.starting_songs + world.included_songs
 
-        # Initially we can reach 15 locations (3 starting songs * 5 checks).
+        # Initially we can reach 3 starting songs (each with 5 check locations).
         # win_count is 20, so the game should not be beatable yet.
         self.assertBeatable(False)
 
-        # Collect one of the non-starting songs in Group 0 (index 3)
-        self.collect_by_name(all_selected_songs[3])
-        # Now we can reach 20 locations (index 0, 1, 2, 3 * 5 checks).
-        # This meets the win_count = 20 requirement, so the game should be beatable!
+        # Collect remaining songs in Group 0 (indices 3 and 4)
+        for song in all_selected_songs[3:5]:
+            if song not in world.starting_songs:
+                self.collect_by_name(song)
+        # 5 unique songs reachable (5 < win_count 20), should not be beatable
+        self.assertBeatable(False)
+
+        # Collect songs in groups up to index 18 (19 unique songs total)
+        for song in all_selected_songs[5:19]:
+            if song not in world.starting_songs:
+                self.collect_by_name(song)
+        # 19 unique songs reachable (19 < win_count 20), still not beatable
+        self.assertBeatable(False)
+
+        # Collect the 20th unique song (index 19)
+        if all_selected_songs[19] not in world.starting_songs:
+            self.collect_by_name(all_selected_songs[19])
+        # Now 20 unique songs are reachable, meeting the win_count = 20 requirement!
         self.assertBeatable(True)
 
     def test_deduplication(self) -> None:

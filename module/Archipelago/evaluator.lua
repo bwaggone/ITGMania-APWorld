@@ -339,9 +339,11 @@ AP.FinalizeEvaluationAndSendChecks = function()
 	else
 		-- Clear Count mode victory: total clears >= win_count
 		local total_clears = 0
-		for name, id in pairs(AP.locationIds) do
-			if name:match("%-0$") and AP.checkedLocations[id] then
-				total_clears = total_clears + 1
+		if AP.locationIds and AP.activeLocationIds then
+			for name, id in pairs(AP.locationIds) do
+				if name:match("%-0$") and AP.activeLocationIds[id] and AP.checkedLocations and AP.checkedLocations[id] then
+					total_clears = total_clears + 1
+				end
 			end
 		end
 		if total_clears >= (AP.slotOptions.win_count or 15) then
