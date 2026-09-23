@@ -75,14 +75,14 @@ AP.MakePopupActor = function(screenName)
 					color_highlight = {0.3, 0.9, 0.3, 1}
 				end
 			elseif params.type == "Sent" then
-				text = "CHECK SENT"
+				text = params.receiver and "ITEM SENT" or "CHECK SENT"
 				local displayName = AP.FormatNotificationName(params.name)
 				if params.receiver then
 					sub = displayName .. " (to " .. params.receiver .. ")"
 				else
 					sub = displayName
 				end
-				color_highlight = {0.3, 0.6, 0.9, 1}
+				color_highlight = {0.2, 0.6, 1.0, 1}
 			elseif params.type == "Connected" then
 				text = "ARCHIPELAGO"
 				sub = "CONNECTED: " .. tostring(params.name)
@@ -144,7 +144,7 @@ AP.MakePopupActor = function(screenName)
 			InitCommand = function(self)
 				self:xy(12, 32)
 				self:halign(0):valign(0)
-				self:zoom(0.5)
+				self:zoom(0.5):maxwidth(480)
 			end
 		}
 	}

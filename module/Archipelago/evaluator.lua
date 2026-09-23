@@ -307,7 +307,13 @@ AP.FinalizeEvaluationAndSendChecks = function()
 		}
 		local payload = JsonEncode({ checks_packet })
 		AP.apHandlerInstance.socket:Send(payload, false)
-		MESSAGEMAN:Broadcast("APItemNotification", { type = "Sent", name = chart_name })
+		local count = #checks_to_send
+		local countStr = count == 1 and " (1 check)" or (" (" .. count .. " checks)")
+		local displayName = AP.FormatNotificationName(chart_name) .. countStr
+		AP.QueueNotification({
+			type = "Sent",
+			name = displayName
+		})
 		
 		-- Locally mark checks as completed immediately
 		for _, loc_id in ipairs(checks_to_send) do
