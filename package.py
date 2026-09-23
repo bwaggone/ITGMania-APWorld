@@ -9,7 +9,7 @@ Packages the ITGMania Archipelago World into:
 Usage:
   python package.py
   python package.py --clean
-  python package.py --version 0.5.3
+  python package.py --version 0.5.4
   python package.py --apworld-only
   python package.py --module-only
   python package.py --output-dir custom_dist
