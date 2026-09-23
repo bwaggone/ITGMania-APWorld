@@ -416,7 +416,7 @@ AP.HandleMessage = function(self, msg)
 				if packet.type == "ItemSend" and packet.item then
 					local finder = packet.item.player
 					local receiver = packet.receiving
-					if finder == AP.SLOT and receiver ~= AP.SLOT then
+					if AP.slotID and finder == AP.slotID and receiver ~= AP.slotID then
 						local item_id = packet.item.item
 						local itemName = AP.GetItemName(item_id, receiver)
 						local receiverName = AP.GetPlayerName(receiver)
