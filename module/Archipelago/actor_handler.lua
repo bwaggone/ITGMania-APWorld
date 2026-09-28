@@ -17,8 +17,12 @@ AP.MakeScreenActor = function(screenName)
 				AP.ClampedWarnings = {} -- Reset warnings on music wheel
 				pcall(AP.ConsumeCurrentTrap)
 				pcall(AP.ResetAllTrapPlayerOptions)
+
+				-- Ensure the Archipelago playlist is generated and loaded into SONGMAN
+				pcall(AP.UpdatePlaylist)
+
 				local apHandler = AP.GetAPHandlerInstance()
-				if not AP.hasDefaultedToSortOrderPreferred and apHandler and apHandler.connected and AP.seedName and AP.seedName ~= "Unknown" and SONGMAN:GetPreferredSortSongs() then
+				if not AP.hasDefaultedToSortOrderPreferred and apHandler and apHandler.connected and AP.seedName and AP.seedName ~= "Unknown" then
 					local top = SCREENMAN:GetTopScreen()
 					if top and top:GetName() == "ScreenSelectMusic" then
 						local wheel = top:GetMusicWheel()

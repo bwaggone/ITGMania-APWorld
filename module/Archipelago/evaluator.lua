@@ -315,6 +315,13 @@ AP.FinalizeEvaluationAndSendChecks = function()
 			name = displayName
 		})
 		
+		AP.AddRecentActivity({
+			type = "self_check",
+			song = AP.FormatNotificationName(chart_name),
+			count = count,
+			timestamp = AP.GetTimestamp()
+		})
+		
 		-- Locally mark checks as completed immediately
 		for _, loc_id in ipairs(checks_to_send) do
 			AP.checkedLocations[loc_id] = true

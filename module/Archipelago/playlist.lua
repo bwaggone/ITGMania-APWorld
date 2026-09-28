@@ -73,11 +73,18 @@ AP.UpdatePlaylist = function()
 			file:destroy()
 			AP.Trace("Updated Archipelago playlist: " .. count .. " songs")
 			
-			-- Force C++ engine to reload the playlist from disk
-			SONGMAN:SetPreferredSongs(path, true)
+			-- Force C++ engine to reload the playlist from disk if songs are loaded
+			local top = SCREENMAN:GetTopScreen()
+			local screenName = top and top:GetName() or ""
+			local songsLoaded = (SONGMAN.GetNumSongs and SONGMAN:GetNumSongs() > 0)
+			
+			if songsLoaded and screenName ~= "ScreenInit" and screenName ~= "ScreenSplashScreen" then
+				pcall(function()
+					SONGMAN:SetPreferredSongs(path, true)
+				end)
+			end
 			
 			-- If currently on ScreenSelectMusic, refresh the wheel
-			local top = SCREENMAN:GetTopScreen()
 			if top and top:GetName() == "ScreenSelectMusic" then
 				local wheel = top:GetMusicWheel()
 				if wheel then

@@ -10,6 +10,7 @@ AP.MODULE_TAG = "[AP-Module]"
 AP.ENABLE_PENDING_SCORES = true
 AP.MAX_PENDING_SCORES = 50
 AP.GAME_NAME = "ITGMania"
+AP.APWORLD_VERSION = "v0.5.4"
 
 -- State
 AP.apHandler = nil

@@ -225,3 +225,59 @@ AP.LoadLastSeed = function()
 	end
 	return seedName
 end
+
+AP.MAX_RECENT_ACTIVITY = 50
+AP.RecentActivity = {}
+
+local function activityFilePath()
+	local seed = AP.SanitizeForFilename(AP.seedName or "unknown_seed")
+	local slot = AP.SanitizeForFilename(AP.connectedSlotName or AP.SLOT or "unknown_slot")
+	local dir = "/Save/Archipelago/SAVE_AP_" .. seed .. "/"
+	return dir .. "activity_" .. slot .. ".json"
+end
+
+AP.SaveRecentActivityToDisk = function()
+	if not AP.seedName or AP.seedName == "Unknown" or not AP.SLOT then return end
+	local path = activityFilePath()
+	local success, jsonStr = pcall(JsonEncode, AP.RecentActivity)
+	if success and jsonStr then
+		local file = RageFileUtil.CreateRageFile()
+		if file:Open(path, 2) then -- Mode 2 = Write
+			file:Write(jsonStr)
+			file:Close()
+		end
+		file:destroy()
+	end
+end
+
+AP.LoadRecentActivityFromDisk = function()
+	AP.RecentActivity = {}
+	if not AP.seedName or AP.seedName == "Unknown" or not AP.SLOT then return end
+	local path = activityFilePath()
+	local file = RageFileUtil.CreateRageFile()
+	if file:Open(path, 1) then -- Mode 1 = Read
+		local content = file:Read()
+		file:Close()
+		if content then
+			local success, data = pcall(JsonDecode, content)
+			if success and type(data) == "table" then
+				AP.RecentActivity = data
+			end
+		end
+	end
+	file:destroy()
+end
+
+AP.AddRecentActivity = function(event)
+	if not event then return end
+	if not event.timestamp then
+		event.timestamp = AP.GetTimestamp()
+	end
+	table.insert(AP.RecentActivity, 1, event) -- Newest first
+	while #AP.RecentActivity > AP.MAX_RECENT_ACTIVITY do
+		table.remove(AP.RecentActivity)
+	end
+	AP.SaveRecentActivityToDisk()
+	MESSAGEMAN:Broadcast("APStatusRefresh")
+end
+
