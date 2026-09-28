@@ -38,13 +38,19 @@ AP.PopulateLocalLookups = function()
 					table.insert(parts, part)
 				end
 				local folderName = nil
+				local groupName = nil
 				if #parts >= 2 then
-					folderName = parts[2]
+					groupName = parts[#parts-1]
+					folderName = parts[#parts]
 				elseif #parts == 1 then
 					folderName = parts[1]
 				end
 				if folderName then
 					AP.folderToChartName[folderName] = base_chart
+					AP.folderToChartName[base_chart] = base_chart
+					if groupName then
+						AP.folderToChartName[groupName .. "/" .. folderName] = base_chart
+					end
 					cached_folders = cached_folders + 1
 				end
 			end

@@ -121,18 +121,8 @@ AP.EvaluateCompletedSong = function()
 	local song = GAMESTATE:GetCurrentSong()
 	if not song then return end
 	
-	-- Extract the folder name from the song's virtual directory path
-	local songDir = song:GetSongDir()
-	local parts = {}
-	for part in songDir:gmatch("[^/]+") do
-		table.insert(parts, part)
-	end
-	local folderName = parts[#parts]
-	
-	if not folderName then return end
-	
-	-- Verify if the song is part of the Archipelago run by looking up its folder name
-	local chart_name = AP.folderToChartName[folderName]
+	-- Verify if the song is part of the Archipelago run
+	local chart_name = AP.GetAPChartNameForSong(song)
 	if not chart_name then
 		-- Not an AP song, ignore silently
 		return

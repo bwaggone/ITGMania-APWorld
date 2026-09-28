@@ -237,33 +237,107 @@ AP.IsChartInSongPool = function(chart_name)
 	return false
 end
 
+AP.GetAPChartNameForSong = function(song)
+	if not song then return nil end
+	
+	-- 1. If it's already a string, check directly in AP lookups
+	if type(song) == "string" then
+		if AP.locationIds and (AP.locationIds[song .. "-0"] or AP.locationIds[song]) then
+			return song
+		end
+		if AP.folderToChartName and AP.folderToChartName[song] then
+			return AP.folderToChartName[song]
+		end
+	end
+
+	-- 2. Extract song info if it's a StepMania Song object
+	local groupName = ""
+	local folderName = ""
+	local displayTitle = ""
+	local translitTitle = ""
+	
+	if type(song) == "userdata" or type(song) == "table" then
+		if song.GetGroupName then groupName = song:GetGroupName() or "" end
+		if song.GetDisplayMainTitle then displayTitle = song:GetDisplayMainTitle() or "" end
+		if song.GetTranslitMainTitle then translitTitle = song:GetTranslitMainTitle() or "" end
+		if song.GetSongDir then
+			local songDir = song:GetSongDir() or ""
+			local parts = {}
+			for part in songDir:gmatch("[^/]+") do
+				table.insert(parts, part)
+			end
+			folderName = parts[#parts] or ""
+			if #parts >= 2 and groupName == "" then
+				groupName = parts[#parts-1] or ""
+			end
+		end
+	end
+
+	-- Direct candidate keys to check
+	local candidates = {
+		groupName .. "/" .. folderName,
+		groupName .. "/" .. displayTitle,
+		groupName .. "/" .. translitTitle,
+		folderName,
+		displayTitle,
+		translitTitle,
+	}
+
+	for _, cand in ipairs(candidates) do
+		if cand ~= "" and cand ~= "/" then
+			if AP.folderToChartName and AP.folderToChartName[cand] then
+				return AP.folderToChartName[cand]
+			end
+			if AP.locationIds and (AP.locationIds[cand .. "-0"] or AP.locationIds[cand]) then
+				return cand
+			end
+		end
+	end
+
+	-- Fuzzy / normalized match against all known AP chart names
+	local function normalizeKey(s)
+		return tostring(s):lower():gsub("[^%w]", "")
+	end
+
+	local normFolder = normalizeKey(groupName .. folderName)
+	local normTitle = normalizeKey(groupName .. displayTitle)
+	local normFolderOnly = normalizeKey(folderName)
+	local normTitleOnly = normalizeKey(displayTitle)
+
+	if AP.folderToChartName then
+		for key, target in pairs(AP.folderToChartName) do
+			local nKey = normalizeKey(key)
+			if nKey ~= "" and (nKey == normFolder or nKey == normTitle or nKey == normFolderOnly or nKey == normTitleOnly) then
+				return target
+			end
+		end
+	end
+
+	if AP.locationIds then
+		for loc_name, _ in pairs(AP.locationIds) do
+			if loc_name:match("%-0$") then
+				local base = loc_name:gsub("%-0$", "")
+				local nBase = normalizeKey(base)
+				if nBase ~= "" and (nBase == normFolder or nBase == normTitle or nBase == normFolderOnly or nBase == normTitleOnly) then
+					return base
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
 AP.IsSongInSongPool = function(song)
 	if not song then return false end
-	local songDir = song:GetSongDir()
-	local parts = {}
-	for part in songDir:gmatch("[^/]+") do
-		table.insert(parts, part)
-	end
-	local folderName = parts[#parts]
-	if not folderName then return false end
-
-	local chart_name = AP.folderToChartName[folderName]
+	local chart_name = AP.GetAPChartNameForSong(song)
 	if not chart_name then return false end
-
 	return AP.IsChartInSongPool(chart_name)
 end
 
 AP.IsSongLocked = function(song)
 	if not song then return false end
-	local songDir = song:GetSongDir()
-	local parts = {}
-	for part in songDir:gmatch("[^/]+") do
-		table.insert(parts, part)
-	end
-	local folderName = parts[#parts]
-	if not folderName then return false end
-
-	local chart_name = AP.folderToChartName[folderName]
+	local chart_name = AP.GetAPChartNameForSong(song)
 	if not chart_name then
 		return false -- Not part of the AP seed, not locked
 	end
@@ -273,7 +347,7 @@ AP.IsSongLocked = function(song)
 	end
 
 	-- If it's Boss Key mode and this is the Goal Song, check boss key count
-	if AP.slotOptions.game_mode == 1 and chart_name == AP.slotOptions.goal_song then
+	if AP.slotOptions and AP.slotOptions.game_mode == 1 and chart_name == AP.slotOptions.goal_song then
 		local collected = AP.GetReceivedItemCount(AP.slotOptions.bosskey_name)
 		local required = AP.slotOptions.bosskeys_required or 0
 		return collected < required
@@ -282,18 +356,12 @@ AP.IsSongLocked = function(song)
 	-- For normal AP songs, verify if they have been received as an item
 	local unlockedSongs = AP.GetUnlockedSongs()
 	for _, unlockedChart in ipairs(unlockedSongs) do
-		local uParts = {}
-		for part in unlockedChart:gmatch("[^/]+") do
-			table.insert(uParts, part)
-		end
-		local uFolder = nil
-		if #uParts >= 2 then
-			uFolder = uParts[2]
-		elseif #uParts == 1 then
-			uFolder = uParts[1]
-		end
-		if uFolder == folderName then
+		if unlockedChart == chart_name then
 			return false -- Found in received items, so it is unlocked
+		end
+		local candAP = AP.GetAPChartNameForSong(unlockedChart)
+		if candAP and candAP == chart_name then
+			return false
 		end
 	end
 
