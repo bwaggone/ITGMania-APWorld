@@ -153,14 +153,19 @@ end
 
 AP.MakeStatusOverlayActor = function()
 	local status_overlay_actor = nil
+	local activePane = 1 -- 1 = Songs (left), 2 = Recent Activity (right)
 	local scrollOffset = 1
 	local selectedIndex = 1
+	local activityScrollOffset = 1
+	local activitySelectedIndex = 1
 	local overlay_visible = false
 	
 	local paneWidth = 720
 	local paneHeight = 440
-	local RowHeight = 26
-	
+	local visibleSongs = 5
+	local suffixes = { "0", "1", "85", "90", "96", "98", "99", "quad", "quint" }
+	local short_labels = { "C1", "C2", "85", "90", "96", "98", "99", "Qd", "Qt" }
+
 	-- Helper to update all visible UI components in the overlay
 	local function updateOverlayUI(self)
 		local backdrop = self:GetChild("Backdrop")
@@ -181,7 +186,7 @@ AP.MakeStatusOverlayActor = function()
 		container:GetChild("ConnectedGroup"):visible(true)
 		container:GetChild("OfflineMsg"):visible(false)
 		
-		-- Update metadata: Room and Seed names
+		-- Update metadata: Room, Seed, and Goal status
 		local room_str = "Room: " .. tostring(AP.SLOT)
 		local seed_str = "Seed: " .. tostring(AP.seedName)
 		local mode_str = ""
@@ -191,9 +196,9 @@ AP.MakeStatusOverlayActor = function()
 			local goal_unlocked = collected >= required
 			local goal_status = goal_unlocked and "UNLOCKED" or "LOCKED"
 			local display_goal = AP.FormatNotificationName(AP.slotOptions.goal_song)
-			mode_str = "    |    Goal: " .. display_goal .. " (" .. goal_status .. ")"
+			mode_str = "  |  Goal: " .. display_goal .. " (" .. goal_status .. ")"
 		end
-		container:GetChild("ConnectedGroup"):GetChild("RoomSeedText"):settext(room_str .. "    |    " .. seed_str .. mode_str)
+		container:GetChild("ConnectedGroup"):GetChild("RoomSeedText"):settext(room_str .. "  |  " .. seed_str .. mode_str)
 		
 		local progress_text = ""
 		local progress_pct = 0
@@ -201,9 +206,8 @@ AP.MakeStatusOverlayActor = function()
 			local collected = AP.GetReceivedItemCount(AP.slotOptions.bosskey_name)
 			local required = AP.slotOptions.bosskeys_required or 0
 			progress_pct = math.min(1.0, collected / math.max(1, required))
-			progress_text = string.format("%s Progress: %d / %d collected (%.1f%%)", AP.slotOptions.bosskey_name, collected, required, progress_pct * 100)
+			progress_text = string.format("%s: %d / %d collected (%.1f%%)", AP.slotOptions.bosskey_name, collected, required, progress_pct * 100)
 		else
-			-- Update goal progress numbers: count unique song clears by checking how many songs have their "-0" check completed
 			local completed_clears = 0
 			if AP.locationIds and AP.activeLocationIds then
 				for name, id in pairs(AP.locationIds) do
@@ -216,126 +220,240 @@ AP.MakeStatusOverlayActor = function()
 			end
 			local target_clears = AP.slotOptions.win_count or 15
 			progress_pct = math.min(1.0, completed_clears / math.max(1, target_clears))
-			progress_text = string.format("AP Goal Progress: %d / %d clears (%.1f%%)", completed_clears, target_clears, progress_pct * 100)
+			progress_text = string.format("AP Goal: %d / %d clears (%.1f%%)", completed_clears, target_clears, progress_pct * 100)
 		end
 		
 		container:GetChild("ConnectedGroup"):GetChild("ProgressText"):settext(progress_text)
 		
-		-- Update progress bar quad width
+		-- Update top-right progress bar fill
 		local bar_fg = container:GetChild("ConnectedGroup"):GetChild("ProgressBarFG")
-		bar_fg:zoomto(500 * progress_pct, 12)
+		bar_fg:zoomto(192 * progress_pct, 6)
 		
-		-- Update modifier stats line
-		local mod_text
+		-- Update modifier ribbon stats
+		local mod_text = ""
 		if AP.IsEnforcingMods() then
 			local max_bpm, max_filter, mini, bonus_count = AP.GetModifierStats()
-			mod_text = string.format("Max Speed: %s    |    BG Filter: %s    |    Mini: %s    |    Score Boosters: %d", max_bpm, max_filter, mini, AP.GetAvailableBonusItems())
+			mod_text = string.format("Max Speed: %s  |  BG Filter: %s  |  Mini: %s", max_bpm, max_filter, mini)
 		else
-			mod_text = string.format("Score Boosters: %d", AP.GetAvailableBonusItems())
+			mod_text = "Standard Modifiers"
 		end
 		container:GetChild("ConnectedGroup"):GetChild("ModifierText"):settext(mod_text)
 		
-		-- Update scrollable songs list rows
+		local sync_str = "Score Boosters: " .. tostring(AP.GetAvailableBonusItems()) .. " Available  |  Sync: Connected"
+		container:GetChild("ConnectedGroup"):GetChild("BoostersSyncText"):settext(sync_str)
+		
+		-- Update column header styling based on activePane
+		local left_header = container:GetChild("ConnectedGroup"):GetChild("LeftPaneHeader")
+		local right_header = container:GetChild("ConnectedGroup"):GetChild("RightPaneHeader")
+		if left_header and right_header then
+			if activePane == 1 then
+				left_header:diffuse(0.3, 0.9, 0.9, 1)
+				right_header:diffuse(0.55, 0.55, 0.55, 1)
+			else
+				left_header:diffuse(0.55, 0.55, 0.55, 1)
+				right_header:diffuse(0.3, 0.9, 0.9, 1)
+			end
+		end
+
+		-- Update scrollable songs list rows with in-line checks
 		local songs = AP.GetUnlockedSongs()
 		local list_af = container:GetChild("ConnectedGroup"):GetChild("SongList")
 		
-		for i = 1, 10 do
+		for i = 1, visibleSongs do
 			local row = list_af:GetChild("Row" .. i)
 			local idx = scrollOffset + i - 1
 			if idx <= #songs then
 				local song_name = songs[idx]
 				local comp, tot = AP.GetChecksForSong(song_name)
 				
-				-- Trim filename to show only the folder path
 				local display_name = AP.FormatNotificationName(song_name)
 				row:GetChild("Name"):settext(idx .. ". " .. display_name)
-				row:GetChild("Checks"):settext(string.format("[ %d / %d ]", comp, tot))
+				
+				local checks_str = string.format("%d / %d", comp, tot)
+				if comp == tot and tot > 0 then
+					checks_str = checks_str .. " *"
+					row:GetChild("ChecksPillBG"):diffuse(0.08, 0.38, 0.16, 0.9)
+					row:GetChild("Checks"):settext(checks_str):diffuse(0.4, 1.0, 0.5, 1)
+				else
+					row:GetChild("ChecksPillBG"):diffuse(0.12, 0.12, 0.12, 0.8)
+					row:GetChild("Checks"):settext(checks_str):diffuse(0.85, 0.85, 0.85, 1)
+				end
+				
+				-- Update individual in-line check badges
+				for k = 1, 9 do
+					local suffix = suffixes[k]
+					local loc_name = song_name .. "-" .. suffix
+					local loc_id = AP.locationIds and AP.locationIds[loc_name]
+					local check_actor = row:GetChild("Check_" .. k)
+					local bg_actor = row:GetChild("BadgeBG_" .. k)
+					
+					if not loc_id or not (AP.activeLocationIds and AP.activeLocationIds[loc_id]) then
+						-- Inactive / disabled check in seed
+						bg_actor:diffuse(0.05, 0.05, 0.05, 0.4)
+						check_actor:settext("-"):diffuse(0.35, 0.35, 0.35, 0.35)
+					elseif AP.checkedLocations and AP.checkedLocations[loc_id] then
+						-- Completed check
+						bg_actor:diffuse(0.08, 0.38, 0.16, 0.95)
+						check_actor:settext(short_labels[k]):diffuse(0.4, 1.0, 0.5, 1)
+					else
+						-- Active but unchecked
+						bg_actor:diffuse(0.14, 0.14, 0.14, 0.85)
+						check_actor:settext(short_labels[k]):diffuse(0.7, 0.7, 0.7, 0.9)
+					end
+				end
 				
 				-- Show/hide selection highlight
 				if idx == selectedIndex then
 					row:GetChild("Highlight"):visible(true)
-					row:GetChild("Name"):diffuse(0.3, 0.9, 0.9, 1) -- highlighted cyan
+					if activePane == 1 then
+						row:GetChild("Highlight"):diffuse(0.12, 0.35, 0.45, 0.6)
+						row:GetChild("Name"):diffuse(0.3, 0.9, 0.9, 1)
+					else
+						row:GetChild("Highlight"):diffuse(0.10, 0.20, 0.25, 0.3)
+						row:GetChild("Name"):diffuse(0.85, 0.85, 0.85, 1)
+					end
 				else
 					row:GetChild("Highlight"):visible(false)
-					row:GetChild("Name"):diffuse(1.0, 1.0, 1.0, 1) -- normal white
+					row:GetChild("Name"):diffuse(1.0, 1.0, 1.0, 1)
 				end
 				
-				-- Diffuse color based on completion percentage (green if finished)
-				if comp == tot and tot > 0 then
-					row:GetChild("Checks"):diffuse(0.3, 1.0, 0.3, 1) -- completed green
-				else
-					row:GetChild("Checks"):diffuse(1.0, 1.0, 1.0, 1) -- normal white
-				end
 				row:visible(true)
 			else
 				row:visible(false)
 			end
 		end
 		
-		-- Update details panel for the selected song
-		local detail_panel = container:GetChild("ConnectedGroup"):GetChild("DetailPanel")
-		if selectedIndex <= #songs then
-			local song_name = songs[selectedIndex]
-			
-			local score_type_names = {
-				[0] = "Money",
-				[1] = "EX",
-				[2] = "High EX"
-			}
-			local st = AP.NormalizeScoreType(AP.slotOptions.score_type)
-			local score_name = score_type_names[st] or "EX"
-			local passing_score = AP.slotOptions.passing_score or 0
-			local fail_str = AP.slotOptions.fail_allowed and " (Fail OK)" or " (No Fail)"
-			local clear_cond_str = string.format("Clear Condition: Minimum %.0f%% %s%s", passing_score, score_name, fail_str)
-			detail_panel:GetChild("ClearCondition"):settext(clear_cond_str):zoom(0.75)
-			
-			local suffixes = { "0", "1", "85", "90", "96", "98", "99", "quad", "quint" }
-			local labels = {
-				["0"] = "Clear Check 1",
-				["1"] = "Clear Check 2",
-				["85"] = "85% Score Check",
-				["90"] = "90% Score Check",
-				["96"] = "96% Score Check",
-				["98"] = "98% Score Check",
-				["99"] = "99% Score Check",
-				["quad"] = "Quad (100% Money)",
-				["quint"] = "Quint (100% EX)"
-			}
-			
-			for _, suffix in ipairs(suffixes) do
-				local label = labels[suffix]
-				local loc_name = song_name .. "-" .. suffix
-				local loc_id = AP.locationIds[loc_name]
-				local row_actor = detail_panel:GetChild("Check" .. suffix)
+		-- Update song navigation status subtext
+		local nav_text = string.format("Showing %d-%d of %d songs", math.min(#songs, scrollOffset), math.min(#songs, scrollOffset + visibleSongs - 1), #songs)
+		local song_nav = container:GetChild("ConnectedGroup"):GetChild("SongNavStatus")
+		song_nav:settext(nav_text)
+		if activePane == 1 then
+			song_nav:diffuse(0.7, 0.7, 0.7, 1)
+		else
+			song_nav:diffuse(0.4, 0.4, 0.4, 1)
+		end
+		
+		-- Update Recent Activity Feed on the right pane
+		local act_af = container:GetChild("ConnectedGroup"):GetChild("ActivityFeed")
+		local activities = AP.RecentActivity or {}
+		local has_activity = #activities > 0
+		act_af:GetChild("EmptyMsg"):visible(not has_activity)
+		
+		local max_act_offset = math.max(1, #activities - 4)
+		if activityScrollOffset > max_act_offset then
+			activityScrollOffset = max_act_offset
+		end
+		if activityScrollOffset < 1 then
+			activityScrollOffset = 1
+		end
+		if activitySelectedIndex > #activities then
+			activitySelectedIndex = math.max(1, #activities)
+		end
+		
+		for i = 1, 5 do
+			local card = act_af:GetChild("Event" .. i)
+			local ev_idx = activityScrollOffset + i - 1
+			local ev = activities[ev_idx]
+			if ev then
+				local badge_text = ""
+				local detail_text = ""
+				local subdetail_text = ""
+				local border_color = { 0.3, 0.9, 0.9, 1 }
+				local badge_color = { 0.3, 0.9, 0.9, 1 }
 				
-				if not loc_id or not AP.activeLocationIds[loc_id] then
-					-- Inactive check
-					row_actor:settext("[-] " .. label .. " (N/A)")
-					row_actor:diffuse(0.6, 0.6, 0.6, 0.7) -- lighter readable grey
-				else
-					-- Active check
-					if AP.checkedLocations and AP.checkedLocations[loc_id] then
-						-- Checked
-						row_actor:settext("[x] " .. label)
-						row_actor:diffuse(0.3, 1.0, 0.3, 1) -- green
+				if ev.type == "received" then
+					if ev.isTrap then
+						border_color = { 1.0, 0.5, 0.0, 1 }
+						badge_color = { 1.0, 0.6, 0.1, 1 }
+						badge_text = "! TRAP TRIGGERED"
+						detail_text = "Queued " .. (ev.name or "Trap")
+						subdetail_text = "sent maliciously by " .. (ev.sender or "Server")
+					elseif ev.isSong then
+						border_color = { 0.3, 0.9, 0.3, 1 }
+						badge_color = { 0.4, 1.0, 0.5, 1 }
+						badge_text = "<- RECEIVED SONG"
+						detail_text = "Unlocked " .. AP.FormatNotificationName(ev.name)
+						subdetail_text = "from " .. (ev.sender or "Server")
 					else
-						-- Unchecked
-						row_actor:settext("[ ] " .. label)
-						row_actor:diffuse(1.0, 1.0, 1.0, 1) -- white
+						border_color = { 0.25, 0.85, 0.35, 1 }
+						badge_color = { 0.35, 0.95, 0.45, 1 }
+						badge_text = "<- RECEIVED ITEM"
+						detail_text = (ev.name or "Item")
+						subdetail_text = "from " .. (ev.sender or "Server")
+					end
+				elseif ev.type == "sent" then
+					border_color = { 0.2, 0.6, 1.0, 1 }
+					badge_color = { 0.35, 0.75, 1.0, 1 }
+					badge_text = "SENT CHECK ->"
+					detail_text = "Found " .. (ev.item or "Item") .. " for " .. (ev.receiver or "Player")
+					subdetail_text = (ev.location and ev.location ~= "") and ("at " .. ev.location) or ""
+				elseif ev.type == "self_check" then
+					border_color = { 0.25, 0.55, 0.95, 1 }
+					badge_color = { 0.45, 0.75, 1.0, 1 }
+					local count_str = (ev.count and ev.count > 1) and (" (" .. ev.count .. " checks)") or ""
+					badge_text = "SENT SELF-CHECK *"
+					detail_text = "Completed " .. (ev.song or "Song") .. count_str
+					subdetail_text = "Registered locally & synced to AP"
+				else
+					border_color = { 0.6, 0.6, 0.6, 1 }
+					badge_color = { 0.8, 0.8, 0.8, 1 }
+					badge_text = "EVENT"
+					detail_text = ev.name or ev.item or "Activity recorded"
+					subdetail_text = ""
+				end
+				
+				-- Highlight active selection card on right pane
+				local hl = card:GetChild("Highlight")
+				if hl then
+					if ev_idx == activitySelectedIndex then
+						hl:visible(true)
+						if activePane == 2 then
+							hl:diffuse(0.12, 0.35, 0.45, 0.6)
+						else
+							hl:diffuse(0.10, 0.20, 0.25, 0.3)
+						end
+					else
+						hl:visible(false)
 					end
 				end
+				
+				card:GetChild("Border"):diffuse(unpack(border_color))
+				card:GetChild("Badge"):settext(badge_text):diffuse(unpack(badge_color))
+				card:GetChild("Detail"):settext(detail_text)
+				card:GetChild("SubDetail"):settext(subdetail_text)
+				card:GetChild("Time"):settext(AP.FormatTimeAgo(ev.timestamp))
+				card:visible(true)
+			else
+				card:visible(false)
 			end
-			detail_panel:visible(true)
+		end
+		
+		-- Update activity navigation status subtext
+		local act_nav_text = ""
+		if not has_activity then
+			act_nav_text = "No activity recorded  |  Press R to Sync"
 		else
-			detail_panel:visible(false)
+			local act_start = activityScrollOffset
+			local act_end = math.min(#activities, activityScrollOffset + 4)
+			act_nav_text = string.format("Showing %d-%d of %d events", act_start, act_end, #activities)
+		end
+		local act_nav = container:GetChild("ConnectedGroup"):GetChild("ActivityNavStatus")
+		act_nav:settext(act_nav_text)
+		if activePane == 2 then
+			act_nav:diffuse(0.7, 0.7, 0.7, 1)
+		else
+			act_nav:diffuse(0.4, 0.4, 0.4, 1)
 		end
 	end
 
 	-- Toggle overlay active state, routing player input and registering the input listener
 	local function toggleOverlay(self)
 		overlay_visible = not overlay_visible
+		activePane = 1
 		scrollOffset = 1
 		selectedIndex = 1
+		activityScrollOffset = 1
+		activitySelectedIndex = 1
 		
 		if overlay_visible then
 			SOUND:PlayOnce(THEME:GetPathS("Common", "Start"))
@@ -364,38 +482,144 @@ AP.MakeStatusOverlayActor = function()
 		return false
 	end
 	
-	-- Pre-generate the table list row actors (Def.ActorFrame doesn't support C++ methods during file parsing)
+	-- Pre-generate the 5 2-line song list row actors
 	local song_list_children = {}
-	for i = 1, 10 do
-		song_list_children[#song_list_children+1] = Def.ActorFrame {
+	for i = 1, 5 do
+		local row_children = {
 			Name = "Row" .. i,
 			InitCommand = function(self)
-				self:y((i - 1) * RowHeight - 52)
+				self:xy(-175, -78 + (i - 1) * 50)
 			end,
 			
-			-- Highlight background quad (only visible on selected row)
+			-- Base row background quad
 			Def.Quad {
-				Name = "Highlight",
+				Name = "RowBG",
 				InitCommand = function(self)
-					self:zoomto(400, RowHeight):diffuse(0.2, 0.2, 0.2, 0.5):visible(false)
-					self:x(-130)
+					self:zoomto(330, 48):diffuse(0.08, 0.08, 0.08, 0.85)
 				end
 			},
 			
-			-- Left column: Song Folder name
+			-- Selection highlight quad
+			Def.Quad {
+				Name = "Highlight",
+				InitCommand = function(self)
+					self:zoomto(330, 48):diffuse(0.12, 0.35, 0.45, 0.5):visible(false)
+				end
+			},
+			
+			-- Top line: Song name
 			LoadFont("Common Normal") .. {
 				Name = "Name",
 				Text = "",
 				InitCommand = function(self)
-					self:x(-paneWidth/2 + 30):halign(0):zoom(0.5):maxwidth(320)
+					self:x(-155):y(-12):halign(0):zoom(0.58):maxwidth(250 / 0.58)
 				end
 			},
-			-- Right column: Completion status counters
+			
+			-- Top line: Checks total pill background
+			Def.Quad {
+				Name = "ChecksPillBG",
+				InitCommand = function(self)
+					self:x(135):y(-12):zoomto(56, 18):diffuse(0.12, 0.12, 0.12, 0.8)
+				end
+			},
+			
+			-- Top line: Checks total text
 			LoadFont("Common Normal") .. {
 				Name = "Checks",
 				Text = "",
 				InitCommand = function(self)
-					self:x(paneWidth/2 - 280):halign(1):zoom(0.5)
+					self:x(135):y(-12):halign(0.5):zoom(0.50)
+				end
+			}
+		}
+		
+		-- Bottom line: 9 In-Line Check status badge boxes
+		for k = 1, 9 do
+			row_children[#row_children+1] = Def.Quad {
+				Name = "BadgeBG_" .. k,
+				InitCommand = function(self)
+					self:x(-144 + (k - 1) * 29):y(12):zoomto(26, 16):diffuse(0.06, 0.06, 0.06, 0.8)
+				end
+			}
+			row_children[#row_children+1] = LoadFont("Common Normal") .. {
+				Name = "Check_" .. k,
+				Text = short_labels[k],
+				InitCommand = function(self)
+					self:x(-144 + (k - 1) * 29):y(12):halign(0.5):zoom(0.44)
+				end
+			}
+		end
+		
+		song_list_children[#song_list_children+1] = Def.ActorFrame(row_children)
+	end
+
+	-- Pre-generate the 5 3-line activity feed event cards
+	local activity_cards = {}
+	for i = 1, 5 do
+		activity_cards[#activity_cards+1] = Def.ActorFrame {
+			Name = "Event" .. i,
+			InitCommand = function(self)
+				self:xy(175, -78 + (i - 1) * 50):visible(false)
+			end,
+			
+			-- Background container quad
+			Def.Quad {
+				Name = "BG",
+				InitCommand = function(self)
+					self:zoomto(330, 48):diffuse(0.08, 0.08, 0.08, 0.85)
+				end
+			},
+			
+			-- Selection highlight quad
+			Def.Quad {
+				Name = "Highlight",
+				InitCommand = function(self)
+					self:zoomto(330, 48):diffuse(0.12, 0.35, 0.45, 0.6):visible(false)
+				end
+			},
+			
+			-- Left colored accent bar
+			Def.Quad {
+				Name = "Border",
+				InitCommand = function(self)
+					self:x(-163):zoomto(4, 48):diffuse(0.3, 0.9, 0.9, 1)
+				end
+			},
+			
+			-- Top-left: Event type badge text
+			LoadFont("Common Normal") .. {
+				Name = "Badge",
+				Text = "",
+				InitCommand = function(self)
+					self:x(-154):y(-14):halign(0):zoom(0.50)
+				end
+			},
+			
+			-- Top-right: Timestamp text
+			LoadFont("Common Normal") .. {
+				Name = "Time",
+				Text = "",
+				InitCommand = function(self)
+					self:x(155):y(-14):halign(1):zoom(0.42):diffuse(0.55, 0.55, 0.55, 1)
+				end
+			},
+			
+			-- Middle line: Primary detail text
+			LoadFont("Common Normal") .. {
+				Name = "Detail",
+				Text = "",
+				InitCommand = function(self)
+					self:x(-154):y(0):halign(0):zoom(0.56):maxwidth(305 / 0.56)
+				end
+			},
+			
+			-- Bottom line: Secondary context text
+			LoadFont("Common Normal") .. {
+				Name = "SubDetail",
+				Text = "",
+				InitCommand = function(self)
+					self:x(-154):y(14):halign(0):zoom(0.46):diffuse(0.6, 0.6, 0.6, 1):maxwidth(305 / 0.46)
 				end
 			}
 		}
@@ -496,26 +720,68 @@ AP.MakeStatusOverlayActor = function()
 				local songs = AP.GetUnlockedSongs()
 				local num_songs = #songs
 
-				if game_btn == "MenuDown" or key == "DeviceButton_down" then
-					-- Scroll down
-					if selectedIndex < num_songs then
-						selectedIndex = selectedIndex + 1
-						if selectedIndex > scrollOffset + 9 then
-							scrollOffset = selectedIndex - 9
-						end
+				if game_btn == "MenuRight" or key == "DeviceButton_right" or event.button == "MenuRight" or event.button == "Right" then
+					-- Switch to Right Pane (Recent Activity)
+					local activities = AP.RecentActivity or {}
+					if activePane ~= 2 and #activities > 0 then
+						activePane = 2
 						SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
 						MESSAGEMAN:Broadcast("APStatusRefresh")
 					end
 					return true
-				elseif game_btn == "MenuUp" or key == "DeviceButton_up" then
-					-- Scroll up
-					if selectedIndex > 1 then
-						selectedIndex = selectedIndex - 1
-						if selectedIndex < scrollOffset then
-							scrollOffset = selectedIndex
-						end
+				elseif game_btn == "MenuLeft" or key == "DeviceButton_left" or event.button == "MenuLeft" or event.button == "Left" then
+					-- Switch to Left Pane (Songs)
+					if activePane ~= 1 then
+						activePane = 1
 						SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
 						MESSAGEMAN:Broadcast("APStatusRefresh")
+					end
+					return true
+				elseif game_btn == "MenuDown" or key == "DeviceButton_down" or event.button == "MenuDown" or event.button == "Down" then
+					if activePane == 1 then
+						-- Scroll down songs in left pane
+						if selectedIndex < num_songs then
+							selectedIndex = selectedIndex + 1
+							if selectedIndex > scrollOffset + visibleSongs - 1 then
+								scrollOffset = selectedIndex - (visibleSongs - 1)
+							end
+							SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
+							MESSAGEMAN:Broadcast("APStatusRefresh")
+						end
+					else
+						-- Scroll down activities in right pane
+						local activities = AP.RecentActivity or {}
+						if activitySelectedIndex < #activities then
+							activitySelectedIndex = activitySelectedIndex + 1
+							if activitySelectedIndex > activityScrollOffset + 5 - 1 then
+								activityScrollOffset = activitySelectedIndex - (5 - 1)
+							end
+							SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
+							MESSAGEMAN:Broadcast("APStatusRefresh")
+						end
+					end
+					return true
+				elseif game_btn == "MenuUp" or key == "DeviceButton_up" or event.button == "MenuUp" or event.button == "Up" then
+					if activePane == 1 then
+						-- Scroll up songs in left pane
+						if selectedIndex > 1 then
+							selectedIndex = selectedIndex - 1
+							if selectedIndex < scrollOffset then
+								scrollOffset = selectedIndex
+							end
+							SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
+							MESSAGEMAN:Broadcast("APStatusRefresh")
+						end
+					else
+						-- Scroll up activities in right pane
+						if activitySelectedIndex > 1 then
+							activitySelectedIndex = activitySelectedIndex - 1
+							if activitySelectedIndex < activityScrollOffset then
+								activityScrollOffset = activitySelectedIndex
+							end
+							SOUND:PlayOnce(THEME:GetPathS("ScreenSelectMaster", "change"))
+							MESSAGEMAN:Broadcast("APStatusRefresh")
+						end
 					end
 					return true
 				end
@@ -593,23 +859,47 @@ AP.MakeStatusOverlayActor = function()
 			-- Top header background strip
 			Def.Quad {
 				InitCommand = function(self)
-					self:y(-paneHeight/2 + 25):zoomto(paneWidth, 50):diffuse(0.12, 0.12, 0.12, 1)
+					self:y(-paneHeight/2 + 28):zoomto(paneWidth, 56):diffuse(0.09, 0.09, 0.09, 1)
 				end
 			},
 			
-			-- Header title text
-			LoadFont("Common Bold") .. {
+			-- Top-left: Header title text
+			LoadFont("Common Normal") .. {
 				Text = "ARCHIPELAGO STATUS",
 				InitCommand = function(self)
-					self:y(-paneHeight/2 + 18):zoom(0.7):diffuse(0.3, 0.9, 0.9, 1)
+					self:x(-340):y(-paneHeight/2 + 18):halign(0):zoom(0.80):diffuse(0.3, 0.9, 0.9, 1)
 				end
 			},
 			
-			-- Bottom footer instructional text
-			LoadFont("Common Normal") .. {
-				Text = "Use &MENUUP;/&MENUDOWN; to scroll. Press R to sync & regenerate. Press &BACK;, or ESC to exit.",
+			-- Top-left: Version badge
+			Def.Quad {
 				InitCommand = function(self)
-					self:y(paneHeight/2 - 18):zoom(0.55):diffuse(0.7, 0.7, 0.7, 1)
+					self:x(-105):y(-paneHeight/2 + 18):zoomto(54, 18):diffuse(0.05, 0.20, 0.25, 1)
+				end
+			},
+			LoadFont("Common Normal") .. {
+				Text = AP.APWORLD_VERSION or "v0.5.4",
+				InitCommand = function(self)
+					self:x(-105):y(-paneHeight/2 + 18):zoom(0.44):diffuse(0.4, 0.9, 1, 1)
+				end
+			},
+			
+			-- Bottom footer instructional strip
+			Def.Quad {
+				InitCommand = function(self)
+					self:y(paneHeight/2 - 16):zoomto(paneWidth, 32):diffuse(0.08, 0.08, 0.08, 1)
+				end
+			},
+			LoadFont("Common Normal") .. {
+				Text = "Use &MENULEFT;/&MENURIGHT; to switch panes, &MENUUP;/&MENUDOWN; to scroll. Press R to sync. &BACK;/ESC to exit.",
+				InitCommand = function(self)
+					self:x(-340):y(paneHeight/2 - 16):halign(0):zoom(0.48):diffuse(0.7, 0.7, 0.7, 1)
+				end
+			},
+			LoadFont("Common Normal") .. {
+				Text = "Simply Love * Archipelago",
+				InitCommand = function(self)
+					self:x(335):y(paneHeight/2 - 16):halign(1):zoom(0.44):diffuse(0.3, 0.85, 0.9, 1)
 				end
 			},
 			
@@ -629,123 +919,158 @@ AP.MakeStatusOverlayActor = function()
 					self:visible(false)
 				end,
 				
-				-- Connection metadata: Room name and Seed name
+				-- Connection metadata: Room name, Seed name, and Goal status
 				LoadFont("Common Normal") .. {
 					Name = "RoomSeedText",
 					Text = "",
 					InitCommand = function(self)
-						self:y(-paneHeight/2 + 40):zoom(0.5):diffuse(0.8, 0.8, 0.8, 1)
+						self:x(-340):y(-paneHeight/2 + 41):halign(0):zoom(0.54):diffuse(0.75, 0.75, 0.75, 1)
 					end
 				},
 				
-				-- AP Goal Progress count text (e.g. "AP Goal Progress: 10 / 15 checks")
-				LoadFont("Common Bold") .. {
+				-- AP Goal Progress count text (top-right)
+				LoadFont("Common Normal") .. {
 					Name = "ProgressText",
 					Text = "",
 					InitCommand = function(self)
-						self:y(-148):zoom(0.5):diffuse(1, 1, 1, 1)
+						self:x(340):y(-paneHeight/2 + 18):halign(1):zoom(0.56):diffuse(0.9, 0.9, 0.9, 1)
 					end
 				},
 				
-				-- Progress bar background border
+				-- Progress bar track (top-right)
 				Def.Quad {
 					Name = "ProgressBarBG",
 					InitCommand = function(self)
-						self:y(-124):zoomto(502, 14):diffuse(0.3, 0.3, 0.3, 1)
+						self:x(245):y(-paneHeight/2 + 41):zoomto(194, 8):diffuse(0.25, 0.25, 0.25, 1)
 					end
 				},
-				-- Progress bar inner background fill (dark track)
 				Def.Quad {
 					InitCommand = function(self)
-						self:y(-124):zoomto(500, 12):diffuse(0.08, 0.08, 0.08, 1)
+						self:x(245):y(-paneHeight/2 + 41):zoomto(192, 6):diffuse(0.08, 0.08, 0.08, 1)
 					end
 				},
-				-- Progress bar active foreground fill (green fill)
 				Def.Quad {
 					Name = "ProgressBarFG",
 					InitCommand = function(self)
-						self:y(-124):halign(0):x(-250):zoomto(0, 12):diffuse(0.3, 0.8, 0.3, 1)
+						self:x(149):y(-paneHeight/2 + 41):halign(0):zoomto(0, 6):diffuse(0.2, 0.85, 0.4, 1)
 					end
 				},
 				
-				-- Active Archipelago modifiers row: Max BPM speed limit, BG filter, and Bonus items
+				-- Active Archipelago modifiers ribbon strip
+				Def.Quad {
+					InitCommand = function(self)
+						self:y(-146):zoomto(paneWidth, 26):diffuse(0.06, 0.06, 0.06, 1)
+					end
+				},
 				LoadFont("Common Normal") .. {
 					Name = "ModifierText",
 					Text = "",
 					InitCommand = function(self)
-						self:y(-102):zoom(0.52):diffuse(0.9, 0.9, 0.4, 1)
+						self:x(-340):y(-146):halign(0):zoom(0.50):diffuse(0.95, 0.85, 0.3, 1)
+					end
+				},
+				LoadFont("Common Normal") .. {
+					Name = "BoostersSyncText",
+					Text = "",
+					InitCommand = function(self)
+						self:x(340):y(-146):halign(1):zoom(0.50):diffuse(0.85, 0.85, 0.85, 1)
 					end
 				},
 				
-				-- Thin divider line separating metadata from song list
+				-- Divider line below ribbon
 				Def.Quad {
 					InitCommand = function(self)
-						self:y(-90):zoomto(paneWidth - 40, 2):diffuse(0.4, 0.4, 0.4, 1)
+						self:y(-133):zoomto(paneWidth - 30, 1):diffuse(0.2, 0.2, 0.2, 1)
 					end
 				},
 				
-				-- Left column header (SONG / CHART)
-				LoadFont("Common Bold") .. {
-					Text = "SONG / CHART",
+				-- Column Header (Left Pane: SONG / IN-LINE CHECKS)
+				LoadFont("Common Normal") .. {
+					Name = "LeftPaneHeader",
+					Text = "SONG / IN-LINE CHECKS",
 					InitCommand = function(self)
-						self:y(-74):x(-paneWidth/2 + 30):halign(0):zoom(0.5):diffuse(0.6, 0.6, 0.6, 1)
+						self:y(-120):x(-340):halign(0):zoom(0.50):diffuse(0.3, 0.9, 0.9, 1)
 					end
 				},
-				-- Right column header (CHECKS)
-				LoadFont("Common Bold") .. {
-					Text = "CHECKS",
+				LoadFont("Common Normal") .. {
+					Text = "TOTAL",
 					InitCommand = function(self)
-						self:y(-74):x(paneWidth/2 - 280):halign(1):zoom(0.5):diffuse(0.6, 0.6, 0.6, 1)
+						self:y(-120):x(-20):halign(1):zoom(0.46):diffuse(0.6, 0.6, 0.6, 1)
 					end
 				},
 				
-				-- Divider vertical line between left list and right details panel
+				-- Column Header (Right Pane: RECENT ACTIVITY & CHECKS)
+				LoadFont("Common Normal") .. {
+					Name = "RightPaneHeader",
+					Text = "RECENT ACTIVITY & CHECKS",
+					InitCommand = function(self)
+						self:y(-120):x(15):halign(0):zoom(0.50):diffuse(0.55, 0.55, 0.55, 1)
+					end
+				},
+				LoadFont("Common Normal") .. {
+					Text = "SENT",
+					InitCommand = function(self)
+						self:y(-120):x(285):zoom(0.40):diffuse(0.2, 0.6, 1.0, 1)
+					end
+				},
+				LoadFont("Common Normal") .. {
+					Text = "RECEIVED",
+					InitCommand = function(self)
+						self:y(-120):x(325):zoom(0.40):diffuse(0.3, 0.9, 0.3, 1)
+					end
+				},
+				
+				-- Vertical divider line between left and right panes
 				Def.Quad {
 					InitCommand = function(self)
-						self:x(90):y(55):zoomto(2, 250):diffuse(0.4, 0.4, 0.4, 1)
+						self:x(-2):y(30):zoomto(1.5, 290):diffuse(0.2, 0.2, 0.2, 1)
 					end
 				},
 				
-				-- Right details panel actors
-				Def.ActorFrame {
-					Name = "DetailPanel",
-					InitCommand = function(self)
-						self:x(220)
-					end,
-					
-					LoadFont("Common Bold") .. {
-						Text = "CHECK DETAILS",
-						InitCommand = function(self)
-							self:y(-74):halign(0):x(-100):zoom(0.5):diffuse(0.3, 0.9, 0.9, 1)
-						end
-					},
-					
-					LoadFont("Common Normal") .. {
-						Name = "ClearCondition",
-						Text = "",
-						InitCommand = function(self)
-							self:y(-48):halign(0):x(-100):zoom(0.42):maxwidth(220):diffuse(0.9, 0.9, 0.4, 1)
-						end
-					},
-					
-					LoadFont("Common Normal") .. { Name = "Check0", Text = "", InitCommand = function(self) self:y(-22):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Check1", Text = "", InitCommand = function(self) self:y(0):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Check85", Text = "", InitCommand = function(self) self:y(22):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Check90", Text = "", InitCommand = function(self) self:y(44):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Check96", Text = "", InitCommand = function(self) self:y(66):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Check98", Text = "", InitCommand = function(self) self:y(88):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Check99", Text = "", InitCommand = function(self) self:y(110):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Checkquad", Text = "", InitCommand = function(self) self:y(132):halign(0):x(-100):zoom(0.45) end },
-					LoadFont("Common Normal") .. { Name = "Checkquint", Text = "", InitCommand = function(self) self:y(154):halign(0):x(-100):zoom(0.45) end },
-				},
-				
-				-- ActorFrame holding the list of scrollable song rows
+				-- Left Pane: Scrollable song rows
 				Def.ActorFrame {
 					Name = "SongList",
 					InitCommand = function(self)
-						self:y(10)
+						self:x(0):y(0)
 					end,
 					unpack(song_list_children)
+				},
+				
+				-- Left Pane bottom navigation subtext
+				LoadFont("Common Normal") .. {
+					Name = "SongNavStatus",
+					Text = "",
+					InitCommand = function(self)
+						self:x(-180):y(158):zoom(0.46):diffuse(0.5, 0.5, 0.5, 1)
+					end
+				},
+				
+				-- Right Pane: Recent activity feed cards
+				Def.ActorFrame {
+					Name = "ActivityFeed",
+					InitCommand = function(self)
+						self:x(0):y(0)
+					end,
+					
+					-- Empty activity message
+					LoadFont("Common Normal") .. {
+						Name = "EmptyMsg",
+						Text = "No recent activity yet.\nPlay songs to send checks!",
+						InitCommand = function(self)
+							self:x(175):y(25):zoom(0.5):diffuse(0.6, 0.6, 0.6, 1):visible(true)
+						end
+					},
+					
+					unpack(activity_cards)
+				},
+				
+				-- Right Pane bottom subtext
+				LoadFont("Common Normal") .. {
+					Name = "ActivityNavStatus",
+					Text = "Tracking last 25 multiworld events  •  Press R to Sync",
+					InitCommand = function(self)
+						self:x(175):y(158):zoom(0.46):diffuse(0.5, 0.5, 0.5, 1)
+					end
 				}
 			}
 		}

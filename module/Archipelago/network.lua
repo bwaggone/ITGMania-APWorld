@@ -244,6 +244,9 @@ AP.HandleMessage = function(self, msg)
 
 				AP.connectedSlotName = AP.GetPlayerName(packet.slot)
 
+				-- Load persisted recent activity log for this seed and slot
+				AP.LoadRecentActivityFromDisk()
+
 				-- Force a fresh load of the persisted item-sync watermark, keyed to
 				-- whichever seed/slot we just connected as - prevents a mid-session
 				-- switch to a different seed/slot from carrying over the previous
@@ -420,10 +423,19 @@ AP.HandleMessage = function(self, msg)
 						local item_id = packet.item.item
 						local itemName = AP.GetItemName(item_id, receiver)
 						local receiverName = AP.GetPlayerName(receiver)
+						local location_id = packet.item.location
+						local locationName = AP.GetLocationName(location_id, finder)
 						AP.QueueNotification({
 							type = "Sent",
 							name = itemName,
 							receiver = receiverName
+						})
+						AP.AddRecentActivity({
+							type = "sent",
+							item = itemName,
+							receiver = receiverName,
+							location = AP.FormatNotificationName(locationName),
+							timestamp = AP.GetTimestamp()
 						})
 					end
 				end
@@ -441,6 +453,7 @@ AP.HandleMessage = function(self, msg)
 						AP.lastProcessedItemIndex = loadLastProcessedIndex()
 					end
 					local newWatermark = AP.lastProcessedItemIndex
+					local hadNewItems = false
 
 					for i, item in ipairs(packet.items) do
 						local runningCount = base_idx + i  -- matches AP.AP_AllReceivedItems's own 1-based indexing
@@ -457,6 +470,7 @@ AP.HandleMessage = function(self, msg)
 						-- "not in the very first packet this launch" - so an item sent while offline
 						-- still gets its notification and gets queued as a trap exactly once.
 						if runningCount > AP.lastProcessedItemIndex then
+							hadNewItems = true
 							local sender = AP.GetPlayerName(item.player)
 							AP.QueueNotification({ type = "Received", name = name, sender = sender })
 
@@ -464,8 +478,49 @@ AP.HandleMessage = function(self, msg)
 								table.insert(AP.armedTrapQueue, name)
 								SCREENMAN:SystemMessage("Trap incoming: " .. name .. " (queued - applies to your next song)")
 							end
+
+							table.insert(AP.RecentActivity, 1, {
+								type = "received",
+								name = name,
+								sender = sender,
+								isSong = (name:find("/") ~= nil),
+								isTrap = (name:sub(1, 7) == "Trap - "),
+								timestamp = AP.GetTimestamp()
+							})
+							while #AP.RecentActivity > AP.MAX_RECENT_ACTIVITY do
+								table.remove(AP.RecentActivity)
+							end
 							newWatermark = runningCount
 						end
+					end
+
+					if hadNewItems then
+						AP.SaveRecentActivityToDisk()
+						if MESSAGEMAN then
+							MESSAGEMAN:Broadcast("APStatusRefresh")
+						end
+					end
+
+					-- If AP.RecentActivity is empty on initial load of an existing seed, prefill recent received items
+					if #AP.RecentActivity == 0 and #packet.items > 0 then
+						local start_i = math.max(1, #packet.items - 15)
+						for i = start_i, #packet.items do
+							local it = packet.items[i]
+							local it_name = AP.itemNames[it.item] or "Unknown Item"
+							local it_sender = AP.GetPlayerName(it.player)
+							table.insert(AP.RecentActivity, 1, {
+								type = "received",
+								name = it_name,
+								sender = it_sender,
+								isSong = (it_name:find("/") ~= nil),
+								isTrap = (it_name:sub(1, 7) == "Trap - "),
+								timestamp = AP.GetTimestamp()
+							})
+						end
+						while #AP.RecentActivity > AP.MAX_RECENT_ACTIVITY do
+							table.remove(AP.RecentActivity)
+						end
+						AP.SaveRecentActivityToDisk()
 					end
 
 					if newWatermark ~= AP.lastProcessedItemIndex then

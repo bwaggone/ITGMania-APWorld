@@ -2,6 +2,18 @@
 
 local AP = ...
 
+local function getTimestamp()
+	if AP.GetTimestamp then
+		return AP.GetTimestamp()
+	elseif GetUnixTime then
+		return GetUnixTime()
+	elseif type(os) == "table" and os.time then
+		return os.time()
+	else
+		return 0
+	end
+end
+
 AP.SendDeathLink = function()
 	if not AP.slotOptions.deathlink_enabled then return end
 	if AP.ignoreNextDeathReport then
@@ -15,7 +27,7 @@ AP.SendDeathLink = function()
 		["cmd"] = "Bounce",
 		tags = { "DeathLink" },
 		data = {
-			time = os.time(),
+			time = getTimestamp(),
 			source = AP.SLOT,
 			cause = AP.SLOT .. " failed a song."
 		}
