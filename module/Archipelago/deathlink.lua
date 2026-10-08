@@ -3,15 +3,16 @@
 local AP = ...
 
 local function getTimestamp()
+	if type(GetUnixTime) == "function" then
+		local ok, t = pcall(GetUnixTime)
+		if ok and type(t) == "number" and t > 0 then
+			return t
+		end
+	end
 	if AP.GetTimestamp then
 		return AP.GetTimestamp()
-	elseif GetUnixTime then
-		return GetUnixTime()
-	elseif type(os) == "table" and os.time then
-		return os.time()
-	else
-		return 0
 	end
+	return 0
 end
 
 AP.SendDeathLink = function()
