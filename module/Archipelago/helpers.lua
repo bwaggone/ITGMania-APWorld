@@ -16,32 +16,33 @@ AP.SanitizeForFilename = function(s)
 end
 
 AP.GetTimestamp = function()
-	if GetUnixTime then
-		return GetUnixTime()
-	elseif type(os) == "table" and os.time then
-		return os.time()
-	else
-		local year = Year()
-		local month = MonthOfYear() + 1
-		local day = DayOfMonth()
-		local hour = Hour()
-		local min = Minute()
-		local sec = Second()
-
-		local y = year - 1
-		local leap_days = math.floor(y / 4) - math.floor(y / 100) + math.floor(y / 400)
-						- (math.floor(1969 / 4) - math.floor(1969 / 100) + math.floor(1969 / 400))
-		local is_leap = (year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0)
-		local days_in_months = { 31, is_leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-
-		local days = (year - 1970) * 365 + leap_days
-		for m = 1, month - 1 do
-			days = days + days_in_months[m]
+	if type(GetUnixTime) == "function" then
+		local ok, t = pcall(GetUnixTime)
+		if ok and type(t) == "number" and t > 0 then
+			return t
 		end
-		days = days + (day - 1)
-
-		return days * 86400 + hour * 3600 + min * 60 + sec
 	end
+
+	local year = Year()
+	local month = MonthOfYear() + 1
+	local day = DayOfMonth()
+	local hour = Hour()
+	local min = Minute()
+	local sec = Second()
+
+	local y = year - 1
+	local leap_days = math.floor(y / 4) - math.floor(y / 100) + math.floor(y / 400)
+					- (math.floor(1969 / 4) - math.floor(1969 / 100) + math.floor(1969 / 400))
+	local is_leap = (year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0)
+	local days_in_months = { 31, is_leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+
+	local days = (year - 1970) * 365 + leap_days
+	for m = 1, month - 1 do
+		days = days + days_in_months[m]
+	end
+	days = days + (day - 1)
+
+	return days * 86400 + hour * 3600 + min * 60 + sec
 end
 
 AP.FormatTimeAgo = function(timestamp)

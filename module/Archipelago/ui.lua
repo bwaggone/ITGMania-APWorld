@@ -186,6 +186,11 @@ AP.MakeStatusOverlayActor = function()
 		container:GetChild("ConnectedGroup"):visible(true)
 		container:GetChild("OfflineMsg"):visible(false)
 		
+		local ver_badge = container:GetChild("VersionBadgeText")
+		if ver_badge then
+			ver_badge:settext(AP.APWORLD_VERSION or "")
+		end
+		
 		-- Update metadata: Room, Seed, and Goal status
 		local room_str = "Room: " .. tostring(AP.SLOT)
 		local seed_str = "Seed: " .. tostring(AP.seedName)
@@ -873,14 +878,16 @@ AP.MakeStatusOverlayActor = function()
 			
 			-- Top-left: Version badge
 			Def.Quad {
+				Name = "VersionBadgeBG",
 				InitCommand = function(self)
 					self:x(-105):y(-paneHeight/2 + 18):zoomto(54, 18):diffuse(0.05, 0.20, 0.25, 1)
 				end
 			},
 			LoadFont("Common Normal") .. {
-				Text = AP.APWORLD_VERSION or "v0.5.4",
+				Name = "VersionBadgeText",
 				InitCommand = function(self)
 					self:x(-105):y(-paneHeight/2 + 18):zoom(0.44):diffuse(0.4, 0.9, 1, 1)
+					self:settext(AP.APWORLD_VERSION or "")
 				end
 			},
 			
