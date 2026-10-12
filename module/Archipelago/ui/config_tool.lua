@@ -1,4 +1,4 @@
--- config_ui.lua provides the in-game UI overlay for configuring
+-- ui/config_tool.lua provides the in-game UI overlay for configuring
 -- Archipelago settings and exporting the player's YAML configuration.
 
 local AP = ...
