@@ -1,5 +1,9 @@
 # ITGMania Archipelago World (v0.6.0)
 
+<p align="left">
+  <img src="module/Archipelago/graphics/itgm-aplogo-color.png" alt="ITGMania Archipelago Logo" width="500" height="500" />
+</p>
+
 An [Archipelago](https://archipelago.gg/) Multiworld Randomizer integration for [ITGMania](https://www.itgmania.com/).
 
 This repository contains both the **Archipelago World (`.apworld`)** generator code and the **ITGMania Client Module**.

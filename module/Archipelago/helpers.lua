@@ -15,6 +15,36 @@ AP.SanitizeForFilename = function(s)
 	return tostring(s):gsub("[^%w%-_]", "_")
 end
 
+AP.GetModuleGraphicPath = function(filename)
+	local dir = (THEME and THEME.GetCurrentThemeDirectory and THEME:GetCurrentThemeDirectory()) or "Themes/Simply Love/"
+	if dir:sub(1, 1) ~= "/" then
+		dir = "/" .. dir
+	end
+	if dir:sub(-1) ~= "/" then
+		dir = dir .. "/"
+	end
+	return dir .. "Modules/Archipelago/graphics/" .. filename
+end
+
+AP.GetLogoAssetAndColor = function(forceColorLogo)
+	if not forceColorLogo then
+		local is_sl = (type(_G.SL) == "table") and (type(_G.SL.Global) == "table") and (type(_G.SL.Global.ActiveColorIndex) == "number")
+		if is_sl and THEME and type(THEME.GetCurThemeName) == "function" then
+			local cur_theme = THEME:GetCurThemeName()
+			if cur_theme and cur_theme ~= "" and cur_theme ~= "Simply Love" then
+				is_sl = false
+			end
+		end
+		if is_sl and type(_G.GetCurrentColor) == "function" then
+			local ok, sl_color = pcall(_G.GetCurrentColor, true)
+			if ok and type(sl_color) == "table" and #sl_color >= 3 then
+				return AP.GetModuleGraphicPath("itgm-aplogo-white.png"), sl_color
+			end
+		end
+	end
+	return AP.GetModuleGraphicPath("itgm-aplogo-color.png"), { 1, 1, 1, 1 }
+end
+
 AP.GetTimestamp = function()
 	if type(GetUnixTime) == "function" then
 		local ok, t = pcall(GetUnixTime)

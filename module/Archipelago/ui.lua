@@ -176,6 +176,14 @@ AP.MakeStatusOverlayActor = function()
 		
 		if not overlay_visible then return end
 		
+		local bg_logo = container:GetChild("BackgroundLogo")
+		if bg_logo then
+			local logo_path, logo_color = AP.GetLogoAssetAndColor(false)
+			bg_logo:Load(logo_path)
+			bg_logo:zoomtoheight(280):zoomx(bg_logo:GetZoomY())
+			bg_logo:diffuse(logo_color):diffusealpha(0.14)
+		end
+		
 		local apHandler = AP.GetAPHandlerInstance()
 		if not apHandler or not apHandler.connected then
 			container:GetChild("ConnectedGroup"):visible(false)
@@ -500,7 +508,7 @@ AP.MakeStatusOverlayActor = function()
 			Def.Quad {
 				Name = "RowBG",
 				InitCommand = function(self)
-					self:zoomto(330, 48):diffuse(0.08, 0.08, 0.08, 0.85)
+					self:zoomto(330, 48):diffuse(0.08, 0.08, 0.08, 0.68)
 				end
 			},
 			
@@ -572,7 +580,7 @@ AP.MakeStatusOverlayActor = function()
 			Def.Quad {
 				Name = "BG",
 				InitCommand = function(self)
-					self:zoomto(330, 48):diffuse(0.08, 0.08, 0.08, 0.85)
+					self:zoomto(330, 48):diffuse(0.08, 0.08, 0.08, 0.68)
 				end
 			},
 			
@@ -858,6 +866,18 @@ AP.MakeStatusOverlayActor = function()
 			Def.Quad {
 				InitCommand = function(self)
 					self:zoomto(paneWidth, paneHeight):diffuse(Color.Black)
+				end
+			},
+			
+			-- Background Archipelago Logo watermark
+			Def.Sprite {
+				Name = "BackgroundLogo",
+				InitCommand = function(self)
+					local logo_path, logo_color = AP.GetLogoAssetAndColor(false)
+					self:Load(logo_path)
+					self:xy(0, 18)
+					self:zoomtoheight(280):zoomx(self:GetZoomY())
+					self:diffuse(logo_color):diffusealpha(0.14)
 				end
 			},
 			
@@ -1168,6 +1188,15 @@ AP.MakeEvaluationOverlayActor = function()
 		container:visible(overlay_visible)
 		
 		if not overlay_visible then return end
+		
+		local bg_logo = container:GetChild("BackgroundLogo")
+		if bg_logo then
+			local logo_path, logo_color = AP.GetLogoAssetAndColor(false)
+			bg_logo:Load(logo_path)
+			bg_logo:zoomtoheight(220):zoomx(bg_logo:GetZoomY())
+			bg_logo:diffuse(logo_color):diffusealpha(0.14)
+		end
+		
 		if not AP.LastEvaluation or not AP.LastEvaluation.chart_name then return end
 		
 		local chart_name = AP.LastEvaluation.chart_name
@@ -1621,6 +1650,18 @@ AP.MakeEvaluationOverlayActor = function()
 			Def.Quad {
 				InitCommand = function(self)
 					self:zoomto(paneWidth, paneHeight):diffuse(Color.Black)
+				end
+			},
+			
+			-- Background Archipelago Logo watermark
+			Def.Sprite {
+				Name = "BackgroundLogo",
+				InitCommand = function(self)
+					local logo_path, logo_color = AP.GetLogoAssetAndColor(false)
+					self:Load(logo_path)
+					self:xy(0, 8)
+					self:zoomtoheight(220):zoomx(self:GetZoomY())
+					self:diffuse(logo_color):diffusealpha(0.14)
 				end
 			},
 			
