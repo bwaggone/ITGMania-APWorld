@@ -942,6 +942,18 @@ AP.MakeConfigOverlayActor = function()
 				end
 			},
 			
+			-- Background Archipelago Logo watermark (always colored version)
+			Def.Sprite {
+				Name = "BackgroundLogo",
+				InitCommand = function(self)
+					local logo_path, logo_color = AP.GetLogoAssetAndColor(true)
+					self:Load(logo_path)
+					self:xy(0, 5)
+					self:zoomtoheight(280):zoomx(self:GetZoomY())
+					self:diffuse(logo_color):diffusealpha(0.14)
+				end
+			},
+			
 			Def.Quad {
 				InitCommand = function(self)
 					self:y(-paneHeight/2 + 25):zoomto(paneWidth, 50):diffuse(0.12, 0.12, 0.12, 1)
