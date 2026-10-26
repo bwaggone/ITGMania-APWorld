@@ -63,7 +63,7 @@ AP.StatusPanes.Activity = {
 					Name = "Badge",
 					Text = "",
 					InitCommand = function(self)
-						self:x(-154):y(-14):halign(0):zoom(0.50)
+						self:x(-154):y(-14):halign(0):zoom(0.7):maxwidth(220 / 0.7)
 					end
 				},
 				
@@ -72,7 +72,7 @@ AP.StatusPanes.Activity = {
 					Name = "Time",
 					Text = "",
 					InitCommand = function(self)
-						self:x(155):y(-14):halign(1):zoom(0.42):diffuse(0.55, 0.55, 0.55, 1)
+						self:x(155):y(-14):halign(1):zoom(0.7):diffuse(0.55, 0.55, 0.55, 1)
 					end
 				},
 				
@@ -81,7 +81,7 @@ AP.StatusPanes.Activity = {
 					Name = "Detail",
 					Text = "",
 					InitCommand = function(self)
-						self:x(-154):y(0):halign(0):zoom(0.56):maxwidth(305 / 0.56)
+						self:x(-154):y(0):halign(0):zoom(0.7):maxwidth(305 / 0.7)
 					end
 				},
 				
@@ -90,7 +90,7 @@ AP.StatusPanes.Activity = {
 					Name = "SubDetail",
 					Text = "",
 					InitCommand = function(self)
-						self:x(-154):y(14):halign(0):zoom(0.46):diffuse(0.6, 0.6, 0.6, 1):maxwidth(305 / 0.46)
+						self:x(-154):y(14):halign(0):zoom(0.7):diffuse(0.6, 0.6, 0.6, 1):maxwidth(305 / 0.7)
 					end
 				}
 			}
@@ -102,19 +102,19 @@ AP.StatusPanes.Activity = {
 				Name = "RightPaneHeader",
 				Text = "RECENT ACTIVITY & CHECKS",
 				InitCommand = function(self)
-					self:y(-120):x(15):halign(0):zoom(0.50):diffuse(0.55, 0.55, 0.55, 1)
+					self:y(-120):x(15):halign(0):zoom(0.7):diffuse(0.55, 0.55, 0.55, 1):maxwidth(190 / 0.7)
 				end
 			},
 			LoadFont("Common Normal") .. {
 				Text = "SENT",
 				InitCommand = function(self)
-					self:y(-120):x(285):zoom(0.40):diffuse(0.2, 0.6, 1.0, 1)
+					self:y(-120):x(240):zoom(0.7):diffuse(0.2, 0.6, 1.0, 1)
 				end
 			},
 			LoadFont("Common Normal") .. {
 				Text = "RECEIVED",
 				InitCommand = function(self)
-					self:y(-120):x(325):zoom(0.40):diffuse(0.3, 0.9, 0.3, 1)
+					self:y(-120):x(300):zoom(0.7):diffuse(0.3, 0.9, 0.3, 1)
 				end
 			},
 			-- Right Pane: Recent activity feed cards
@@ -129,7 +129,7 @@ AP.StatusPanes.Activity = {
 					Name = "EmptyMsg",
 					Text = "No recent activity yet.\nPlay songs to send checks!",
 					InitCommand = function(self)
-						self:x(175):y(25):zoom(0.5):diffuse(0.6, 0.6, 0.6, 1):visible(true)
+						self:x(175):y(25):zoom(0.7):diffuse(0.6, 0.6, 0.6, 1):visible(true)
 					end
 				},
 				
@@ -140,7 +140,7 @@ AP.StatusPanes.Activity = {
 				Name = "ActivityNavStatus",
 				Text = "Tracking last 25 multiworld events  •  Press R to Sync",
 				InitCommand = function(self)
-					self:x(175):y(158):zoom(0.46):diffuse(0.5, 0.5, 0.5, 1)
+					self:x(175):y(158):zoom(0.7):diffuse(0.5, 0.5, 0.5, 1):maxwidth(330 / 0.7)
 				end
 			}
 		}

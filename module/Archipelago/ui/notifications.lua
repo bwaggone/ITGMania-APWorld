@@ -13,7 +13,7 @@ AP.MakePopupActor = function(screenName)
 	
 	return Def.ActorFrame {
 		InitCommand = function(self)
-			self:xy(-300, _screen.h - 100)
+			self:xy(-400, _screen.h - 110)
 			isScreenActive = false
 		end,
 		ScreenChangedMessageCommand = function(self)
@@ -24,7 +24,7 @@ AP.MakePopupActor = function(screenName)
 				if isScreenActive then
 					isScreenActive = false
 					self:finishtweening()
-					self:x(-300)
+					self:x(-400)
 					AP.isNotificationActive = false
 				end
 			end
@@ -112,14 +112,14 @@ AP.MakePopupActor = function(screenName)
 			self:finishtweening()
 			self:linear(0.25):x(20)
 			self:sleep(1.0)
-			self:linear(0.25):x(-300)
+			self:linear(0.25):x(-400)
 			self:queuecommand("ShowNext")
 		end,
 		
 		Def.Quad {
 			Name = "Background",
 			InitCommand = function(self)
-				self:zoomto(260, 48)
+				self:zoomto(360, 72)
 				self:halign(0):valign(0)
 				self:diffuse(0, 0, 0, 0.8)
 			end
@@ -127,7 +127,7 @@ AP.MakePopupActor = function(screenName)
 		Def.Quad {
 			Name = "AccentStrip",
 			InitCommand = function(self)
-				self:zoomto(4, 48)
+				self:zoomto(4, 72)
 				self:halign(0):valign(0)
 				self:diffuse(1, 1, 1, 1)
 			end
@@ -135,17 +135,17 @@ AP.MakePopupActor = function(screenName)
 		LoadFont("Common Bold") .. {
 			Name = "Title",
 			InitCommand = function(self)
-				self:xy(12, 4)
+				self:xy(14, 8)
 				self:halign(0):valign(0)
-				self:zoom(0.6)
+				self:zoom(0.7)
 			end
 		},
 		LoadFont("Common Normal") .. {
 			Name = "Subtext",
 			InitCommand = function(self)
-				self:xy(12, 32)
+				self:xy(14, 46)
 				self:halign(0):valign(0)
-				self:zoom(0.5):maxwidth(480)
+				self:zoom(0.7):maxwidth(470)
 			end
 		}
 	}

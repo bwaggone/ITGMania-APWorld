@@ -866,7 +866,7 @@ AP.MakeConfigOverlayActor = function()
 				Name = "Name",
 				Text = "",
 				InitCommand = function(self)
-					self:x(-paneWidth/2 + 20):halign(0):zoom(0.6):maxwidth(420)
+					self:x(-paneWidth/2 + 20):halign(0):zoom(0.7):maxwidth(420 / 0.7)
 				end
 			},
 			
@@ -874,7 +874,7 @@ AP.MakeConfigOverlayActor = function()
 				Name = "Value",
 				Text = "",
 				InitCommand = function(self)
-					self:x(paneWidth/2 - 20):halign(1):zoom(0.6):maxwidth(250)
+					self:x(paneWidth/2 - 20):halign(1):zoom(0.7):maxwidth(250 / 0.7)
 				end
 			}
 		}
@@ -981,7 +981,7 @@ AP.MakeConfigOverlayActor = function()
 				Name = "Footer",
 				Text = "",
 				InitCommand = function(self)
-					self:y(paneHeight/2 - 20):zoom(0.52):diffuse(0.75, 0.75, 0.75, 1)
+					self:y(paneHeight/2 - 20):zoom(0.7):diffuse(0.75, 0.75, 0.75, 1):maxwidth((paneWidth - 40) / 0.7)
 				end
 			}
 		}

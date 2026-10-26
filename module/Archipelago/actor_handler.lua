@@ -201,7 +201,7 @@ AP.MakeScreenActor = function(screenName)
 			LoadFont("Common Bold") .. {
 				Text = "ARCHIPELAGO MODIFIERS CLAMPED",
 				InitCommand = function(self)
-					self:y(-22):zoom(0.65)
+					self:y(-22):zoom(0.7)
 					self:diffuse(0.9, 0.8, 0.1, 1) -- yellow warning title
 				end
 			},
@@ -210,7 +210,7 @@ AP.MakeScreenActor = function(screenName)
 				Name = "Subtext",
 				Text = "",
 				InitCommand = function(self)
-					self:y(12):zoom(0.65)
+					self:y(12):zoom(0.7)
 					self:diffuse(0.9, 0.9, 0.9, 1)
 				end
 			}
