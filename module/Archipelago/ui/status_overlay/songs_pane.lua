@@ -52,7 +52,7 @@ AP.StatusPanes.Songs = {
 					Name = "Name",
 					Text = "",
 					InitCommand = function(self)
-						self:x(-155):y(-12):halign(0):zoom(0.58):maxwidth(250 / 0.58)
+						self:x(-155):y(-12):halign(0):zoom(0.7):maxwidth(240 / 0.7)
 					end
 				},
 				
@@ -60,7 +60,7 @@ AP.StatusPanes.Songs = {
 				Def.Quad {
 					Name = "ChecksPillBG",
 					InitCommand = function(self)
-						self:x(135):y(-12):zoomto(56, 18):diffuse(0.12, 0.12, 0.12, 0.8)
+						self:x(135):y(-12):zoomto(64, 20):diffuse(0.12, 0.12, 0.12, 0.8)
 					end
 				},
 				
@@ -69,7 +69,7 @@ AP.StatusPanes.Songs = {
 					Name = "Checks",
 					Text = "",
 					InitCommand = function(self)
-						self:x(135):y(-12):halign(0.5):zoom(0.50)
+						self:x(135):y(-12):halign(0.5):zoom(0.7)
 					end
 				}
 			}
@@ -79,14 +79,14 @@ AP.StatusPanes.Songs = {
 				row_children[#row_children+1] = Def.Quad {
 					Name = "BadgeBG_" .. k,
 					InitCommand = function(self)
-						self:x(-144 + (k - 1) * 29):y(12):zoomto(26, 16):diffuse(0.06, 0.06, 0.06, 0.8)
+						self:x(-144 + (k - 1) * 29):y(12):zoomto(28, 18):diffuse(0.06, 0.06, 0.06, 0.8)
 					end
 				}
 				row_children[#row_children+1] = LoadFont("Common Normal") .. {
 					Name = "Check_" .. k,
 					Text = short_labels[k],
 					InitCommand = function(self)
-						self:x(-144 + (k - 1) * 29):y(12):halign(0.5):zoom(0.44)
+						self:x(-144 + (k - 1) * 29):y(12):halign(0.5):zoom(0.7)
 					end
 				}
 			end
@@ -100,13 +100,13 @@ AP.StatusPanes.Songs = {
 				Name = "LeftPaneHeader",
 				Text = "SONG / IN-LINE CHECKS",
 				InitCommand = function(self)
-					self:y(-120):x(-340):halign(0):zoom(0.50):diffuse(0.3, 0.9, 0.9, 1)
+					self:y(-120):x(-340):halign(0):zoom(0.7):diffuse(0.3, 0.9, 0.9, 1)
 				end
 			},
 			LoadFont("Common Normal") .. {
 				Text = "TOTAL",
 				InitCommand = function(self)
-					self:y(-120):x(-20):halign(1):zoom(0.46):diffuse(0.6, 0.6, 0.6, 1)
+					self:y(-120):x(-20):halign(1):zoom(0.7):diffuse(0.6, 0.6, 0.6, 1)
 				end
 			},
 			-- Left Pane: Scrollable song rows
@@ -122,7 +122,7 @@ AP.StatusPanes.Songs = {
 				Name = "SongNavStatus",
 				Text = "",
 				InitCommand = function(self)
-					self:x(-180):y(158):zoom(0.46):diffuse(0.5, 0.5, 0.5, 1)
+					self:x(-180):y(158):zoom(0.7):diffuse(0.5, 0.5, 0.5, 1)
 				end
 			}
 		}

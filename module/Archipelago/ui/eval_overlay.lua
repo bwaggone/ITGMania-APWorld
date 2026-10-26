@@ -10,8 +10,8 @@ AP.MakeEvaluationOverlayActor = function()
 	local overlay_visible = false
 	local toggleOverlay = nil
 	
-	local paneWidth = 560
-	local paneHeight = 340
+	local paneWidth = 580
+	local paneHeight = 360
 	
 	local function getPendingChecks(chart_name, adjustedScore, moneyAdjusted, exAdjusted, is_failed)
 		local pending = {}
@@ -564,7 +564,7 @@ AP.MakeEvaluationOverlayActor = function()
 			-- Top header background strip
 			Def.Quad {
 				InitCommand = function(self)
-					self:y(-paneHeight/2 + 25):zoomto(paneWidth, 50):diffuse(0.12, 0.12, 0.12, 1)
+					self:y(-paneHeight/2 + 28):zoomto(paneWidth, 56):diffuse(0.12, 0.12, 0.12, 1)
 				end
 			},
 			
@@ -572,7 +572,7 @@ AP.MakeEvaluationOverlayActor = function()
 			LoadFont("Common Bold") .. {
 				Text = "ARCHIPELAGO SCORE ADJUSTER",
 				InitCommand = function(self)
-					self:y(-paneHeight/2 + 18):zoom(0.65):diffuse(0.3, 0.9, 0.9, 1)
+					self:y(-paneHeight/2 + 18):zoom(0.72):diffuse(0.3, 0.9, 0.9, 1)
 				end
 			},
 			
@@ -581,7 +581,7 @@ AP.MakeEvaluationOverlayActor = function()
 				Name = "SongNameText",
 				Text = "",
 				InitCommand = function(self)
-					self:y(-paneHeight/2 + 40):zoom(0.48):diffuse(0.8, 0.8, 0.8, 1)
+					self:y(-paneHeight/2 + 40):zoom(0.7):diffuse(0.8, 0.8, 0.8, 1):maxwidth((paneWidth - 40) / 0.7)
 				end
 			},
 			
@@ -590,34 +590,34 @@ AP.MakeEvaluationOverlayActor = function()
 				Name = "StatsText",
 				Text = "",
 				InitCommand = function(self)
-					self:y(-50):zoom(0.55):diffuse(1, 1, 1, 1)
+					self:y(-65):zoom(0.7):diffuse(1, 1, 1, 1):maxwidth((paneWidth - 40) / 0.7)
 				end
 			},
 			
 			-- Row 1: Money Score Row
-			LoadFont("Common Normal") .. { Name = "Row1Label", InitCommand = function(self) self:y(-10):x(-240):halign(0):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row1Original", InitCommand = function(self) self:y(-10):x(-70):halign(0):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row1Arrow", Text = "->", InitCommand = function(self) self:y(-10):x(35):halign(0.5):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row1Adjusted", InitCommand = function(self) self:y(-10):x(55):halign(0):zoom(0.58) end },
+			LoadFont("Common Normal") .. { Name = "Row1Label", InitCommand = function(self) self:y(-25):x(-250):halign(0):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row1Original", InitCommand = function(self) self:y(-25):x(-50):halign(0):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row1Arrow", Text = "->", InitCommand = function(self) self:y(-25):x(45):halign(0.5):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row1Adjusted", InitCommand = function(self) self:y(-25):x(70):halign(0):zoom(0.7) end },
 			
 			-- Row 2: EX Score Row
-			LoadFont("Common Normal") .. { Name = "Row2Label", InitCommand = function(self) self:y(20):x(-240):halign(0):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row2Original", InitCommand = function(self) self:y(20):x(-70):halign(0):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row2Arrow", Text = "->", InitCommand = function(self) self:y(20):x(35):halign(0.5):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row2Adjusted", InitCommand = function(self) self:y(20):x(55):halign(0):zoom(0.58) end },
+			LoadFont("Common Normal") .. { Name = "Row2Label", InitCommand = function(self) self:y(8):x(-250):halign(0):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row2Original", InitCommand = function(self) self:y(8):x(-50):halign(0):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row2Arrow", Text = "->", InitCommand = function(self) self:y(8):x(45):halign(0.5):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row2Adjusted", InitCommand = function(self) self:y(8):x(70):halign(0):zoom(0.7) end },
 			
 			-- Row 3: High EX Score Row
-			LoadFont("Common Normal") .. { Name = "Row3Label", InitCommand = function(self) self:y(50):x(-240):halign(0):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row3Original", InitCommand = function(self) self:y(50):x(-70):halign(0):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row3Arrow", Text = "->", InitCommand = function(self) self:y(50):x(35):halign(0.5):zoom(0.58) end },
-			LoadFont("Common Normal") .. { Name = "Row3Adjusted", InitCommand = function(self) self:y(50):x(55):halign(0):zoom(0.58) end },
+			LoadFont("Common Normal") .. { Name = "Row3Label", InitCommand = function(self) self:y(41):x(-250):halign(0):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row3Original", InitCommand = function(self) self:y(41):x(-50):halign(0):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row3Arrow", Text = "->", InitCommand = function(self) self:y(41):x(45):halign(0.5):zoom(0.7) end },
+			LoadFont("Common Normal") .. { Name = "Row3Adjusted", InitCommand = function(self) self:y(41):x(70):halign(0):zoom(0.7) end },
 			
 			-- Unlocked Checks
 			LoadFont("Common Normal") .. {
 				Name = "UnlocksText",
 				Text = "",
 				InitCommand = function(self)
-					self:y(80):zoom(0.52):diffuse(0.9, 0.9, 0.4, 1):maxwidth(paneWidth - 40)
+					self:y(75):zoom(0.7):diffuse(0.9, 0.9, 0.4, 1):maxwidth((paneWidth - 40) / 0.7)
 				end
 			},
 			
@@ -626,14 +626,14 @@ AP.MakeEvaluationOverlayActor = function()
 				Name = "PassedText",
 				Text = "",
 				InitCommand = function(self)
-					self:y(108):zoom(0.52):diffuse(0.5, 0.9, 0.5, 1):maxwidth(paneWidth - 40)
+					self:y(105):zoom(0.7):diffuse(0.5, 0.9, 0.5, 1):maxwidth((paneWidth - 40) / 0.7)
 				end
 			},
 			
 			-- Divider vertical line before footer
 			Def.Quad {
 				InitCommand = function(self)
-					self:y(paneHeight/2 - 35):zoomto(paneWidth - 40, 1):diffuse(0.3, 0.3, 0.3, 1)
+					self:y(paneHeight/2 - 38):zoomto(paneWidth - 40, 1):diffuse(0.3, 0.3, 0.3, 1)
 				end
 			},
 			
@@ -641,7 +641,7 @@ AP.MakeEvaluationOverlayActor = function()
 			LoadFont("Common Normal") .. {
 				Text = "Use &MENUUP;/&MENUDOWN; to select score, &MENULEFT;/&MENURIGHT; to adjust. Press &START; to apply, &BACK; to cancel.",
 				InitCommand = function(self)
-					self:y(paneHeight/2 - 18):zoom(0.52):diffuse(0.7, 0.7, 0.7, 1)
+					self:y(paneHeight/2 - 20):zoom(0.7):diffuse(0.7, 0.7, 0.7, 1):maxwidth((paneWidth - 40) / 0.7)
 				end
 			}
 		}

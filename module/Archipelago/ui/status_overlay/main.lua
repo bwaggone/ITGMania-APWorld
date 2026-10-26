@@ -157,7 +157,7 @@ AP.MakeStatusOverlayActor = function()
 			Name = "RoomSeedText",
 			Text = "",
 			InitCommand = function(self)
-				self:x(-340):y(-paneHeight/2 + 41):halign(0):zoom(0.54):diffuse(0.75, 0.75, 0.75, 1)
+				self:x(-340):y(-paneHeight/2 + 41):halign(0):zoom(0.7):diffuse(0.75, 0.75, 0.75, 1):maxwidth(470 / 0.7)
 			end
 		},
 		
@@ -166,7 +166,7 @@ AP.MakeStatusOverlayActor = function()
 			Name = "ProgressText",
 			Text = "",
 			InitCommand = function(self)
-				self:x(340):y(-paneHeight/2 + 18):halign(1):zoom(0.56):diffuse(0.9, 0.9, 0.9, 1)
+				self:x(340):y(-paneHeight/2 + 18):halign(1):zoom(0.7):diffuse(0.9, 0.9, 0.9, 1)
 			end
 		},
 		
@@ -199,14 +199,14 @@ AP.MakeStatusOverlayActor = function()
 			Name = "ModifierText",
 			Text = "",
 			InitCommand = function(self)
-				self:x(-340):y(-146):halign(0):zoom(0.50):diffuse(0.95, 0.85, 0.3, 1)
+				self:x(-340):y(-146):halign(0):zoom(0.7):diffuse(0.95, 0.85, 0.3, 1):maxwidth(330 / 0.7)
 			end
 		},
 		LoadFont("Common Normal") .. {
 			Name = "BoostersSyncText",
 			Text = "",
 			InitCommand = function(self)
-				self:x(340):y(-146):halign(1):zoom(0.50):diffuse(0.85, 0.85, 0.85, 1)
+				self:x(340):y(-146):halign(1):zoom(0.7):diffuse(0.85, 0.85, 0.85, 1):maxwidth(330 / 0.7)
 			end
 		},
 		
@@ -457,13 +457,13 @@ AP.MakeStatusOverlayActor = function()
 			Def.Quad {
 				Name = "VersionBadgeBG",
 				InitCommand = function(self)
-					self:x(-105):y(-paneHeight/2 + 18):zoomto(54, 18):diffuse(0.05, 0.20, 0.25, 1)
+					self:x(-80):y(-paneHeight/2 + 18):zoomto(70, 22):diffuse(0.05, 0.20, 0.25, 1)
 				end
 			},
 			LoadFont("Common Normal") .. {
 				Name = "VersionBadgeText",
 				InitCommand = function(self)
-					self:x(-105):y(-paneHeight/2 + 18):zoom(0.44):diffuse(0.4, 0.9, 1, 1)
+					self:x(-80):y(-paneHeight/2 + 18):zoom(0.7):diffuse(0.4, 0.9, 1, 1)
 					self:settext(AP.APWORLD_VERSION or "")
 				end
 			},
@@ -477,13 +477,13 @@ AP.MakeStatusOverlayActor = function()
 			LoadFont("Common Normal") .. {
 				Text = "Use &MENULEFT;/&MENURIGHT; to switch panes, &MENUUP;/&MENUDOWN; to scroll. Press R to sync. &BACK;/ESC to exit.",
 				InitCommand = function(self)
-					self:x(-340):y(paneHeight/2 - 16):halign(0):zoom(0.48):diffuse(0.7, 0.7, 0.7, 1)
+					self:x(-340):y(paneHeight/2 - 16):halign(0):zoom(0.7):diffuse(0.7, 0.7, 0.7, 1):maxwidth(510 / 0.7)
 				end
 			},
 			LoadFont("Common Normal") .. {
 				Text = "Simply Love * Archipelago",
 				InitCommand = function(self)
-					self:x(335):y(paneHeight/2 - 16):halign(1):zoom(0.44):diffuse(0.3, 0.85, 0.9, 1)
+					self:x(335):y(paneHeight/2 - 16):halign(1):zoom(0.7):diffuse(0.3, 0.85, 0.9, 1):maxwidth(160 / 0.7)
 				end
 			},
 			
